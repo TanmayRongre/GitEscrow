@@ -115,7 +115,7 @@ async function request(
   });
 }
 
-function printAuditReport() {
+function printAuditReport(): { total: number; passed: number; failed: number } {
   console.log(
     "\n========================================================================================================",
   );
@@ -135,9 +135,11 @@ function printAuditReport() {
     "========================================================================================================\n",
   );
   const passedCount = results.filter((r) => r.passed).length;
+  const failedCount = results.length - passedCount;
   console.log(
-    `Total Audit Checks: ${results.length} | Passed: ${passedCount} | Failed: ${results.length - passedCount}`,
+    `Total Audit Checks: ${results.length} | Passed: ${passedCount} | Failed: ${failedCount}`,
   );
+  return { total: results.length, passed: passedCount, failed: failedCount };
 }
 
 async function runAudit() {
@@ -160,6 +162,7 @@ async function runAudit() {
   const baseUrl = `http://127.0.0.1:${port}`;
   console.log(`Ephemeral audit server active on ${baseUrl}...\n`);
 
+  let summary = { total: 0, passed: 0, failed: 0 };
   try {
     // ------------------------------------------------------------------
     // Setup Test Actors & Organizations
@@ -940,14 +943,27 @@ async function runAudit() {
     // ------------------------------------------------------------------
     // Print Final Audit Report Table
     // ------------------------------------------------------------------
-    printAuditReport();
+    summary = printAuditReport();
   } finally {
     server.close();
     await mongoose.disconnect();
   }
+
+  if (summary.failed > 0) {
+    console.error(
+      `\n❌ Audit failed: ${summary.failed} of ${summary.total} check(s) failed.`,
+    );
+    process.exit(1);
+  } else {
+    console.log(
+      `\n✓ All ${summary.passed} audit checks passed successfully!`,
+    );
+    process.exit(0);
+  }
 }
 
-runAudit().catch((err) => {
+runAudit().catch(async (err) => {
   console.error("Audit run failed:", err);
+  await mongoose.disconnect().catch(() => {});
   process.exit(1);
 });
