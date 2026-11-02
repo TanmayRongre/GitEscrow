@@ -9,6 +9,8 @@ import { authRouter } from './auth/auth.routes';
 import { organizationRouter } from './organizations/organization.routes';
 import { bountyRouter, milestoneRouter } from './bounties/bounty.routes';
 import { aiRouter } from './ai/ai.routes';
+import { userRouter } from './users/user.routes';
+import { paypalWebhookRouter } from './paypal/webhook.routes';
 import { authenticate, requireGlobalRole } from './auth/auth.middleware';
 
 // Load environment variables from server/.env and root .env
@@ -67,6 +69,9 @@ app.get('/', (_req, res) => {
 // Authentication routes
 app.use('/api/auth', authRouter);
 
+// User profile and payout routes (Task 2D)
+app.use('/api/users', userRouter);
+
 // Organization management routes
 app.use('/api/organizations', organizationRouter);
 
@@ -91,6 +96,9 @@ adminRouter.get('/test', authenticate, requireGlobalRole('ADMIN'), (req: any, re
   });
 });
 app.use('/api/admin', adminRouter);
+
+// PayPal Webhooks Route (Task 2D)
+app.use('/api/webhooks/paypal', paypalWebhookRouter);
 
 // GitHub Webhooks Route
 app.use('/api/webhooks', webhookRouter);

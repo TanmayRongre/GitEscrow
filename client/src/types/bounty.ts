@@ -17,9 +17,28 @@ export type MilestoneStatus =
   | "APPROVED"
   | "REJECTED";
 
+export type MilestonePayoutStatus =
+  | "UNPAID"
+  | "AWAITING_PAYOUT_INFO"
+  | "QUEUED"
+  | "PROCESSING"
+  | "UNCERTAIN"
+  | "SUCCESS"
+  | "FAILED"
+  | "UNCLAIMED";
+
+export type FundingStatus =
+  | "UNFUNDED"
+  | "FUNDING_INITIATED"
+  | "FUNDED"
+  | "PARTIALLY_DISBURSED"
+  | "FULLY_DISBURSED"
+  | "REFUNDED";
+
 export type LedgerEventType =
   | "FUNDING_INITIATED"
   | "FUNDING_CAPTURED"
+  | "FUNDING_REFUNDED"
   | "REFUND_INITIATED"
   | "REFUND_COMPLETED"
   | "MILESTONE_APPROVED"
@@ -74,6 +93,11 @@ export interface IBounty {
   rewardAmount: number;
   currency: "USD";
   rewardDescription?: string;
+  fundingStatus?: FundingStatus;
+  fundedAmount?: number;
+  disbursedAmount?: number;
+  reservedAmount?: number;
+  inboundCaptureId?: string;
   status: BountyStatus;
   statusHistory: IBountyStatusHistory[];
   assignedContributorId?:
@@ -115,6 +139,39 @@ export interface IMilestone {
   decisionNotes?: string;
   submittedAt?: string;
   submissionDetails?: string;
+  prUrl?: string;
+  prNumber?: number;
+  prTitle?: string;
+  prState?: 'open' | 'closed';
+  isMerged?: boolean;
+  headSha?: string;
+  baseBranch?: string;
+  headBranch?: string;
+  submissionHistory?: Array<{
+    submittedAt: string;
+    prUrl: string;
+    prNumber: number;
+    notes?: string;
+    headSha?: string;
+    assessment?: string;
+  }>;
+  latestVerification?: any;
+  rejectionReason?: string;
+  payoutStatus?: MilestonePayoutStatus;
+  payoutBatchId?: string;
+  payoutSenderBatchId?: string;
+  payoutItemId?: string;
+  payoutTransactionId?: string;
+  payoutReceiverEmail?: string;
+  payoutDisbursedAt?: string;
+  payoutAttempts?: number;
+  payoutError?: {
+    name?: string;
+    message?: string;
+    debugId?: string;
+    timestamp?: string;
+    details?: any;
+  };
   dueDate?: string;
   createdAt: string;
   updatedAt: string;

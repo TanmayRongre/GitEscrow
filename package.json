@@ -15,7 +15,10 @@
     "test:webhook": "npm run test:webhook --prefix server",
     "test:auth": "npm run test:auth --prefix server",
     "test:bounties": "npm run test:bounties --prefix server",
-    "test:ai": "npm run test:ai --prefix server"
+    "test:pr-verification": "npm run test:pr-verification --prefix server",
+    "test:payouts": "npm run test:payouts --prefix server",
+    "audit:2c1": "npm run audit:2c1 --prefix server",
+    "verify:payouts-us": "npm run verify:payouts-us --prefix server"
   },
   "keywords": [
     "escrow",
@@ -26,5 +29,7 @@
     "hackathon"
   ],
   "author": "",
-  "license": "MIT"
+  "devDependencies": {
+    "puppeteer-core": "^25.16.0"
+  }
 }

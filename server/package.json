@@ -14,7 +14,10 @@
     "test:webhook": "tsx scripts/test-webhook-endpoint.ts",
     "test:auth": "tsx scripts/test-auth.ts",
     "test:bounties": "tsx scripts/test-bounties.ts",
-    "test:ai": "tsx scripts/test-ai-analysis.ts"
+    "test:pr-verification": "tsx scripts/test-pr-verification.ts",
+    "test:payouts": "tsx scripts/test-milestone-payout.ts",
+    "audit:2c1": "tsx scripts/audit-task-2c1.ts",
+    "verify:payouts-us": "tsx scripts/verify-payouts-us.ts"
   },
   "keywords": [
     "escrow",

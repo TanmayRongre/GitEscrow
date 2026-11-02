@@ -17,8 +17,15 @@ import {
   submitBountySchema,
   submitMilestoneSchema,
   milestoneDecisionSchema,
-  bountyQuerySchema
+  bountyQuerySchema,
+  fundBountySchema
 } from './bounty.validation';
+import { PayoutService, PayoutError, maskEmail } from '../paypal/payout.service';
+import { PRVerificationService, PRVerificationError } from '../ai/pr-verification.service';
+import {
+  SubmitMilestonePRRequestSchema,
+  ReviewMilestoneRequestSchema,
+} from '../ai/pr-verification.types';
 
 async function resolveOrgRole(
   orgId: string | mongoose.Types.ObjectId,
@@ -46,9 +53,13 @@ function handleControllerError(err: any, res: Response, defaultMessage: string) 
     err instanceof BountyError ||
     err instanceof MilestoneError ||
     err instanceof LedgerError ||
-    err instanceof BountyStateError
+    err instanceof BountyStateError ||
+    err instanceof PRVerificationError ||
+    err instanceof PayoutError
   ) {
-    res.status(err.status).json({ error: err.message, code: err.code });
+    const status = (err as any).statusCode || (err as any).status || 400;
+    const code = (err as any).errorCode || (err as any).code || 'ERROR';
+    res.status(status).json({ error: err.message, code });
     return;
   }
   res.status(500).json({ error: `${defaultMessage}: ${err.message}` });
@@ -84,6 +95,30 @@ export class BountyController {
   public static async getById(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const result = await BountyService.getBountyById(req.params.id);
+      const orgRole =
+        result.bounty && req.user
+          ? await resolveOrgRole(
+              (result.bounty.organizationId as any)._id || result.bounty.organizationId,
+              req.user._id
+            )
+          : undefined;
+      const contributorId = (result.bounty?.assignedContributorId as any)?._id || result.bounty?.assignedContributorId;
+      const isPrivileged =
+        req.user?.role === 'ADMIN' ||
+        orgRole === 'OWNER' ||
+        orgRole === 'SPONSOR' ||
+        (contributorId && req.user && contributorId.toString() === req.user._id.toString());
+
+      if (!isPrivileged) {
+        result.milestones = result.milestones.map((m: any) => {
+          const obj = typeof m.toJSON === 'function' ? m.toJSON() : m;
+          if (obj.payoutReceiverEmail) {
+            obj.payoutReceiverEmail = maskEmail(obj.payoutReceiverEmail);
+          }
+          return obj;
+        });
+      }
+
       res.status(200).json(result);
     } catch (err: any) {
       handleControllerError(err, res, 'Failed to get bounty');
@@ -128,6 +163,27 @@ export class BountyController {
       res.status(200).json({ message: 'Bounty published successfully', bounty: published });
     } catch (err: any) {
       handleControllerError(err, res, 'Failed to publish bounty');
+    }
+  }
+
+  public static async fundBounty(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+      const validated = fundBountySchema.parse(req.body);
+      const bounty = await Bounty.findById(req.params.id);
+      if (!bounty) {
+        res.status(404).json({ error: 'Bounty not found', code: 'BOUNTY_NOT_FOUND' });
+        return;
+      }
+
+      const orgRole = await resolveOrgRole(bounty.organizationId, req.user._id);
+      const funded = await BountyService.fundBounty(req.params.id, validated, req.user, orgRole);
+      res.status(200).json({ message: 'Bounty funded successfully', bounty: funded });
+    } catch (err: any) {
+      handleControllerError(err, res, 'Failed to fund bounty');
     }
   }
 
@@ -217,7 +273,28 @@ export class BountyController {
   public static async listMilestones(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const milestones = await MilestoneService.listMilestones(req.params.id);
-      res.status(200).json({ milestones });
+      const bounty = await Bounty.findById(req.params.id);
+      const orgRole =
+        bounty && req.user
+          ? await resolveOrgRole(bounty.organizationId, req.user._id)
+          : undefined;
+      const isPrivileged =
+        req.user?.role === 'ADMIN' ||
+        orgRole === 'OWNER' ||
+        orgRole === 'SPONSOR' ||
+        (bounty?.assignedContributorId &&
+          req.user &&
+          bounty.assignedContributorId.toString() === req.user._id.toString());
+
+      const sanitized = milestones.map((m) => {
+        const obj = typeof m.toJSON === 'function' ? m.toJSON() : m;
+        if (!isPrivileged && obj.payoutReceiverEmail) {
+          obj.payoutReceiverEmail = maskEmail(obj.payoutReceiverEmail);
+        }
+        return obj;
+      });
+
+      res.status(200).json({ milestones: sanitized });
     } catch (err: any) {
       handleControllerError(err, res, 'Failed to list milestones');
     }
@@ -356,6 +433,156 @@ export class BountyController {
       res.status(200).json({ ledger });
     } catch (err: any) {
       handleControllerError(err, res, 'Failed to get organization ledger');
+    }
+  }
+
+  // --- Task 2C: PR Submission & Verification Endpoints ---
+
+  public static async submitMilestonePR(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' });
+        return;
+      }
+      const milestoneId = req.params.milestoneId || req.params.id;
+      const validated = SubmitMilestonePRRequestSchema.parse(req.body);
+      const result = await PRVerificationService.submitPRForMilestone(
+        milestoneId,
+        validated,
+        req.user
+      );
+      res.status(200).json({
+        message: 'Pull request submitted and verified successfully.',
+        milestone: result.milestone,
+        verification: result.verification
+      });
+    } catch (err: any) {
+      handleControllerError(err, res, 'Failed to submit PR for milestone');
+    }
+  }
+
+  public static async reviewMilestonePR(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' });
+        return;
+      }
+      const milestoneId = req.params.milestoneId || req.params.id;
+      const validated = ReviewMilestoneRequestSchema.parse(req.body);
+      const milestone = await PRVerificationService.reviewMilestone(
+        milestoneId,
+        validated,
+        req.user
+      );
+      res.status(200).json({
+        message: `Milestone decision "${validated.action}" recorded successfully.`,
+        milestone
+      });
+    } catch (err: any) {
+      handleControllerError(err, res, 'Failed to process milestone review decision');
+    }
+  }
+
+  public static async getMilestoneVerification(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' });
+        return;
+      }
+      const milestoneId = req.params.milestoneId || req.params.id;
+      const milestone = await Milestone.findById(milestoneId);
+      if (!milestone) {
+        res.status(404).json({ error: 'Milestone not found', code: 'MILESTONE_NOT_FOUND' });
+        return;
+      }
+      if (!milestone.latestVerification) {
+        res.status(404).json({
+          error: 'No verification report available for this milestone yet.',
+          code: 'VERIFICATION_NOT_FOUND'
+        });
+        return;
+      }
+      res.status(200).json({ verification: milestone.latestVerification });
+    } catch (err: any) {
+      handleControllerError(err, res, 'Failed to get milestone verification');
+    }
+  }
+
+  // --- Task 2D: Milestone Payout Endpoints ---
+
+  public static async retryMilestonePayout(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' });
+        return;
+      }
+      const milestoneId = req.params.milestoneId || req.params.id;
+      const milestone = await Milestone.findById(milestoneId);
+      if (!milestone) {
+        res.status(404).json({ error: 'Milestone not found', code: 'MILESTONE_NOT_FOUND' });
+        return;
+      }
+      const bounty = await Bounty.findById(milestone.bountyId);
+      if (!bounty) {
+        res.status(404).json({ error: 'Bounty not found', code: 'BOUNTY_NOT_FOUND' });
+        return;
+      }
+
+      const orgRole = await resolveOrgRole(bounty.organizationId, req.user._id);
+      const isGlobalAdmin = req.user.role === 'ADMIN';
+      const isSponsorOrOwner = orgRole === 'OWNER' || orgRole === 'SPONSOR';
+
+      if (!isGlobalAdmin && !isSponsorOrOwner) {
+        res.status(403).json({
+          error: 'Access Denied: Only organization sponsors or admins can retry payouts.',
+          code: 'FORBIDDEN'
+        });
+        return;
+      }
+
+      const result = await PayoutService.retryMilestonePayout(milestoneId, req.user);
+      res.status(200).json({
+        message: 'Payout retry processed',
+        status: result.status,
+        milestone: result.milestone
+      });
+    } catch (err: any) {
+      handleControllerError(err, res, 'Failed to retry payout');
+    }
+  }
+
+  public static async getMilestonePayoutStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' });
+        return;
+      }
+      const milestoneId = req.params.milestoneId || req.params.id;
+      const reconciled = await PayoutService.reconcileUncertainPayout(milestoneId);
+
+      const bounty = await Bounty.findById(reconciled.bountyId);
+      const orgRole = bounty ? await resolveOrgRole(bounty.organizationId, req.user._id) : undefined;
+      const isPrivileged =
+        req.user.role === 'ADMIN' ||
+        orgRole === 'OWNER' ||
+        orgRole === 'SPONSOR' ||
+        (bounty?.assignedContributorId && bounty.assignedContributorId.toString() === req.user._id.toString());
+
+      res.status(200).json({
+        milestoneId: reconciled._id,
+        payoutStatus: reconciled.payoutStatus,
+        payoutBatchId: reconciled.payoutBatchId,
+        payoutItemId: reconciled.payoutItemId,
+        payoutTransactionId: reconciled.payoutTransactionId,
+        payoutReceiverEmail: isPrivileged
+          ? reconciled.payoutReceiverEmail
+          : maskEmail(reconciled.payoutReceiverEmail),
+        payoutDisbursedAt: reconciled.payoutDisbursedAt,
+        payoutAttempts: reconciled.payoutAttempts,
+        payoutError: reconciled.payoutError
+      });
+    } catch (err: any) {
+      handleControllerError(err, res, 'Failed to get payout status');
     }
   }
 }

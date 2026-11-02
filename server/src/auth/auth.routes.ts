@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { AuthController } from './auth.controller';
 import { authenticate } from './auth.middleware';
+import { UserController } from '../users/user.controller';
 
 export const authRouter = Router();
 
@@ -32,6 +33,8 @@ authRouter.post('/login', loginLimiter, AuthController.login);
 authRouter.post('/refresh', AuthController.refresh);
 authRouter.post('/logout', AuthController.logout);
 authRouter.get('/me', authenticate, AuthController.me);
+authRouter.get('/me/payout-profile', authenticate, UserController.getMyPayoutProfile);
+authRouter.patch('/me/payout-profile', authenticate, UserController.updateMyPayoutProfile);
 authRouter.post('/bootstrap-admin', authLimiter, AuthController.bootstrapAdmin);
 
 // Dedicated rate limiting verification endpoint

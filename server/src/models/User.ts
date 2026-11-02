@@ -10,6 +10,7 @@ export interface IUser extends Document {
   email: string;
   passwordHash: string;
   avatarUrl?: string;
+  paypalEmail?: string;
   role: UserRole;
   accountStatus: AccountStatus;
   emailVerified: boolean;
@@ -54,6 +55,13 @@ const UserSchema = new Schema<IUser>(
     avatarUrl: {
       type: String,
       trim: true,
+      default: undefined
+    },
+    paypalEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid PayPal email address'],
       default: undefined
     },
     role: {

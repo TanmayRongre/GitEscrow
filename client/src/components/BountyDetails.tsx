@@ -16,12 +16,16 @@ import {
   InfoIcon,
   ArrowLeftIcon,
   ExternalLinkIcon,
+  SparkleIcon,
 } from "./Icons";
 import {
   animateTabTransition,
   animateMilestoneList,
 } from "../motion/transitions";
 import { ModalDialog } from "./ModalDialog";
+import { MilestoneSubmitPRModal } from "./MilestoneSubmitPRModal";
+import { PRVerificationModal } from "./PRVerificationModal";
+import type { IAcceptanceVerificationResult } from "../types/pr-verification";
 
 interface BountyDetailsProps {
   bountyId: string;
@@ -65,6 +69,19 @@ export function BountyDetails({
     useState<IMilestone | null>(null);
   const [milestoneSubmitDetails, setMilestoneSubmitDetails] =
     useState<string>("");
+
+  // Task 2C: PR Submission & Verification Modal States
+  const [selectedMilestoneForPRSubmit, setSelectedMilestoneForPRSubmit] =
+    useState<IMilestone | null>(null);
+  const [activeVerificationModal, setActiveVerificationModal] = useState<{
+    milestone: IMilestone;
+    verification: IAcceptanceVerificationResult;
+  } | null>(null);
+
+  // Task 2D: Contributor Payout Profile & Retry States
+  const [showPayoutEmailModal, setShowPayoutEmailModal] = useState<boolean>(false);
+  const [payoutEmailInput, setPayoutEmailInput] = useState<string>("");
+  const [payoutLoading, setPayoutLoading] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const tabContentRef = useRef<HTMLDivElement>(null);
@@ -119,18 +136,22 @@ export function BountyDetails({
   }, [bountyId]);
 
   const isCreator =
-    currentUser &&
-    bounty &&
-    ((typeof bounty.createdBy === "object" &&
-      bounty.createdBy?._id === currentUser.id) ||
-      bounty.createdBy === currentUser.id);
+    Boolean(
+      currentUser &&
+      bounty &&
+      ((typeof bounty.createdBy === "object" &&
+        String((bounty.createdBy as any)?._id || (bounty.createdBy as any)?.id) === String(currentUser.id)) ||
+        String(bounty.createdBy) === String(currentUser.id))
+    );
 
   const isAssignedContributor =
-    currentUser &&
-    bounty &&
-    ((typeof bounty.assignedContributorId === "object" &&
-      bounty.assignedContributorId?._id === currentUser.id) ||
-      bounty.assignedContributorId === currentUser.id);
+    Boolean(
+      currentUser &&
+      bounty &&
+      ((typeof bounty.assignedContributorId === "object" &&
+        String((bounty.assignedContributorId as any)?._id || (bounty.assignedContributorId as any)?.id) === String(currentUser.id)) ||
+        String(bounty.assignedContributorId) === String(currentUser.id))
+    );
 
   const canAccept =
     currentUser && bounty && bounty.status === "OPEN" && !isAssignedContributor;
@@ -185,6 +206,64 @@ export function BountyDetails({
       onRefreshList?.();
     } catch (err: any) {
       setError(err.message || "Failed to cancel bounty.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleFundBounty = async () => {
+    if (!bounty) return;
+    try {
+      setActionLoading(true);
+      setError(null);
+      await apiRequest(`/bounties/${bountyId}/fund`, {
+        method: "POST",
+        body: JSON.stringify({
+          paypalCaptureId: `cap_sandbox_${Date.now()}`,
+          amount: bounty.rewardAmount,
+        }),
+      });
+      setSuccessMsg(`Bounty funded with $${bounty.rewardAmount.toFixed(2)} USD! Milestone payouts activated.`);
+      await fetchDetails();
+      onRefreshList?.();
+    } catch (err: any) {
+      setError(err.message || "Failed to fund bounty.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSavePayoutEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setPayoutLoading(true);
+      setError(null);
+      await apiRequest("/users/me/payout-profile", {
+        method: "PATCH",
+        body: JSON.stringify({ paypalEmail: payoutEmailInput.trim() }),
+      });
+      setShowPayoutEmailModal(false);
+      setSuccessMsg("PayPal payout email configured successfully.");
+      await fetchDetails();
+    } catch (err: any) {
+      setError(err.message || "Failed to update PayPal email.");
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
+  const handleRetryPayout = async (milestoneId: string) => {
+    try {
+      setActionLoading(true);
+      setError(null);
+      const res = await apiRequest<{ message: string; status: string }>(
+        `/milestones/${milestoneId}/payout/retry`,
+        { method: "POST" },
+      );
+      setSuccessMsg(`Payout retry status: ${res.status}. ${res.message}`);
+      await fetchDetails();
+    } catch (err: any) {
+      setError(err.message || "Failed to retry payout.");
     } finally {
       setActionLoading(false);
     }
@@ -466,6 +545,30 @@ export function BountyDetails({
               Cancel bounty
             </button>
           )}
+
+          {isCreator && bounty.status !== "DRAFT" && bounty.fundingStatus === "UNFUNDED" && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handleFundBounty}
+              disabled={actionLoading}
+            >
+              Fund bounty ({formatReward(bounty.rewardAmount, bounty.currency)})
+            </button>
+          )}
+
+          {isAssignedContributor && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => {
+                setPayoutEmailInput(currentUser?.paypalEmail || currentUser?.email || "");
+                setShowPayoutEmailModal(true);
+              }}
+            >
+              {currentUser?.paypalEmail ? "Update PayPal email" : "Configure PayPal email"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -495,6 +598,26 @@ export function BountyDetails({
           >
             {getStatusLabel(bounty.status)}
           </span>
+          {bounty.fundingStatus && (
+            <span
+              className={`status-badge ${
+                bounty.fundingStatus === "FUNDED" || bounty.fundingStatus === "FULLY_DISBURSED"
+                  ? "badge-ok"
+                  : bounty.fundingStatus === "PARTIALLY_DISBURSED"
+                  ? "badge-progress"
+                  : "badge-cancelled"
+              }`}
+              style={{ fontSize: "11px" }}
+            >
+              {bounty.fundingStatus === "FUNDED"
+                ? "Funded in Escrow"
+                : bounty.fundingStatus === "PARTIALLY_DISBURSED"
+                ? "Partially Disbursed"
+                : bounty.fundingStatus === "FULLY_DISBURSED"
+                ? "Fully Disbursed"
+                : "Unfunded"}
+            </span>
+          )}
           <span className="reward-tag-large measured">
             {formatReward(bounty.rewardAmount, bounty.currency)}
           </span>
@@ -779,6 +902,88 @@ export function BountyDetails({
                         </div>
                       )}
 
+                      {/* PR Evidence & AI Verification Banner */}
+                      {m.prUrl && (
+                        <div
+                          style={{
+                            marginTop: "var(--space-xs)",
+                            padding: "var(--space-xs) var(--space-sm)",
+                            background: "var(--color-paper-3)",
+                            borderRadius: "var(--radius-card)",
+                            border: "var(--rule-hair) solid var(--color-rule)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "var(--space-2xs)",
+                            fontSize: "var(--text-xs)",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2xs)" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
+                              <a
+                                href={m.prUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="measured"
+                                style={{ color: "var(--color-accent)", textDecoration: "underline", fontWeight: 600 }}
+                              >
+                                PR #{m.prNumber} ↗
+                              </a>
+                              {m.prState && (
+                                <span className="status-badge" style={{ fontSize: "10px" }}>
+                                  {m.prState}
+                                </span>
+                              )}
+                              {m.isMerged && (
+                                <span className="status-badge badge-ok" style={{ fontSize: "10px" }}>
+                                  merged
+                                </span>
+                              )}
+                              {m.submissionHistory && m.submissionHistory.length > 1 && (
+                                <span className="status-badge badge-progress" style={{ fontSize: "10px" }}>
+                                  resubmission #{m.submissionHistory.length}
+                                </span>
+                              )}
+                            </div>
+
+                            {m.latestVerification && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
+                                <span
+                                  className={`status-badge ${
+                                    m.latestVerification.overallAssessment === "PASS"
+                                      ? "badge-ok"
+                                      : m.latestVerification.overallAssessment === "FAIL"
+                                      ? "badge-cancelled"
+                                      : "badge-progress"
+                                  }`}
+                                  style={{ fontSize: "10px", fontWeight: 600 }}
+                                >
+                                  AI: {m.latestVerification.overallAssessment}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm"
+                                  style={{ padding: "2px 8px", fontSize: "11px", whiteSpace: "nowrap" }}
+                                  onClick={() =>
+                                    setActiveVerificationModal({
+                                      milestone: m,
+                                      verification: m.latestVerification!,
+                                    })
+                                  }
+                                >
+                                  <SparkleIcon />
+                                  <span>View AI report</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {m.prTitle && (
+                            <p style={{ color: "var(--color-ink-2)", margin: 0 }}>
+                              {m.prTitle}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {m.decisionNotes && (
                         <div
                           style={{
@@ -810,45 +1015,154 @@ export function BountyDetails({
                         }}
                       >
                         {isApproved && (
-                          <span
+                          <div
                             style={{
-                              color: "var(--color-ok)",
-                              fontSize: "var(--text-xs)",
-                              display: "inline-flex",
+                              display: "flex",
                               alignItems: "center",
-                              gap: "var(--space-2xs)",
+                              gap: "var(--space-sm)",
+                              flexWrap: "wrap",
+                              fontSize: "var(--text-xs)",
                             }}
                           >
-                            <LockIcon />
-                            <span>Approved and locked</span>
-                          </span>
+                            <span
+                              style={{
+                                color: "var(--color-ok)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "var(--space-2xs)",
+                              }}
+                            >
+                              <LockIcon />
+                              <span>Approved deliverable</span>
+                            </span>
+
+                            {/* Task 2D: Financial Payout Status Badge */}
+                            {m.payoutStatus === "SUCCESS" && (
+                              <span
+                                className="status-badge badge-ok"
+                                title={`PayPal Transaction: ${m.payoutTransactionId || "Recorded"}`}
+                                style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}
+                              >
+                                <CheckIcon />
+                                <span>Paid via PayPal</span>
+                              </span>
+                            )}
+
+                            {m.payoutStatus === "PROCESSING" && (
+                              <span
+                                className="status-badge badge-progress"
+                                title="PayPal payout batch is currently processing"
+                              >
+                                Payout processing
+                              </span>
+                            )}
+
+                            {m.payoutStatus === "AWAITING_PAYOUT_INFO" && (
+                              <div style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-xs)" }}>
+                                <span className="status-badge" style={{ color: "var(--color-muted)" }}>
+                                  Awaiting PayPal email
+                                </span>
+                                {isAssignedContributor && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    style={{ padding: "2px 8px", fontSize: "11px" }}
+                                    onClick={() => {
+                                      setPayoutEmailInput(currentUser?.paypalEmail || currentUser?.email || "");
+                                      setShowPayoutEmailModal(true);
+                                    }}
+                                  >
+                                    Add PayPal email
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {m.payoutStatus === "FAILED" && (
+                              <div style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-xs)" }}>
+                                <span className="status-badge badge-cancelled" title={m.payoutError?.message || "Payout failed"}>
+                                  Payout failed
+                                </span>
+                                {(isCreator || currentUser?.role === "ADMIN") && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm"
+                                    style={{ padding: "2px 8px", fontSize: "11px" }}
+                                    onClick={() => handleRetryPayout(m._id || m.id!)}
+                                  >
+                                    Retry payout
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {m.payoutStatus === "UNCLAIMED" && (
+                              <span className="status-badge badge-progress">
+                                Unclaimed in PayPal
+                              </span>
+                            )}
+
+                            {(!m.payoutStatus || m.payoutStatus === "UNPAID") && (
+                              <span className="status-badge" style={{ color: "var(--color-muted)" }}>
+                                {bounty.fundingStatus === "FUNDED" || bounty.fundingStatus === "PARTIALLY_DISBURSED"
+                                  ? "Payout queued"
+                                  : "Awaiting bounty funding"}
+                              </span>
+                            )}
+                          </div>
                         )}
 
                         {canSubmitThis && (
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            style={{ whiteSpace: "nowrap" }}
-                            onClick={() => setSelectedMilestoneForSubmit(m)}
-                          >
-                            Submit deliverable
-                          </button>
+                          <div style={{ display: "flex", gap: "var(--space-xs)", flexWrap: "wrap" }}>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              style={{ whiteSpace: "nowrap" }}
+                              onClick={() => setSelectedMilestoneForPRSubmit(m)}
+                            >
+                              <GitIssueIcon />
+                              <span>{m.prUrl ? "Resubmit PR" : "Submit PR deliverable"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              style={{ whiteSpace: "nowrap" }}
+                              onClick={() => setSelectedMilestoneForSubmit(m)}
+                            >
+                              Notes only
+                            </button>
+                          </div>
                         )}
 
                         {canReviewThis && (
                           <div
-                            style={{ display: "flex", gap: "var(--space-xs)" }}
+                            style={{ display: "flex", gap: "var(--space-xs)", flexWrap: "wrap" }}
                           >
+                            {m.latestVerification && (
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={() =>
+                                  setActiveVerificationModal({
+                                    milestone: m,
+                                    verification: m.latestVerification!,
+                                  })
+                                }
+                              >
+                                <SparkleIcon />
+                                <span>Review PR & AI report</span>
+                              </button>
+                            )}
                             <button
                               type="button"
-                              className="btn btn-primary btn-sm"
+                              className={m.latestVerification ? "btn btn-sm" : "btn btn-primary btn-sm"}
                               onClick={() => {
                                 setSelectedMilestoneForReview(m);
                                 setReviewAction("approve");
                               }}
                             >
                               <CheckIcon />
-                              <span>Approve milestone</span>
+                              <span>Approve</span>
                             </button>
                             <button
                               type="button"
@@ -1108,6 +1422,105 @@ export function BountyDetails({
               disabled={actionLoading}
             >
               {actionLoading ? "Submitting…" : "Submit for review"}
+            </button>
+          </div>
+        </form>
+      </ModalDialog>
+
+      {/* Task 2C: Contributor Submit PR Modal */}
+      {selectedMilestoneForPRSubmit && bounty && (
+        <MilestoneSubmitPRModal
+          milestone={selectedMilestoneForPRSubmit}
+          bounty={bounty}
+          onSuccess={(updatedMilestone, verification) => {
+            setSelectedMilestoneForPRSubmit(null);
+            setMilestones((prev) =>
+              prev.map((item) =>
+                (item._id || item.id) === (updatedMilestone._id || updatedMilestone.id)
+                  ? updatedMilestone
+                  : item
+              )
+            );
+            setActiveVerificationModal({
+              milestone: updatedMilestone,
+              verification,
+            });
+            setSuccessMsg("Pull request submitted and verified by AI successfully.");
+          }}
+          onClose={() => setSelectedMilestoneForPRSubmit(null)}
+        />
+      )}
+
+      {/* Task 2C: AI PR Verification Report & Review Modal */}
+      {activeVerificationModal && (
+        <PRVerificationModal
+          milestone={activeVerificationModal.milestone}
+          verification={activeVerificationModal.verification}
+          isSponsor={Boolean(isCreator)}
+          onDecisionComplete={(updatedMilestone) => {
+            setActiveVerificationModal(null);
+            setMilestones((prev) =>
+              prev.map((item) =>
+                (item._id || item.id) === (updatedMilestone._id || updatedMilestone.id)
+                  ? updatedMilestone
+                  : item
+              )
+            );
+            fetchDetails();
+            setSuccessMsg(
+              updatedMilestone.status === "APPROVED"
+                ? "Milestone approved and locked. Recorded in escrow ledger."
+                : "Review feedback submitted to contributor."
+            );
+          }}
+          onClose={() => setActiveVerificationModal(null)}
+        />
+      )}
+
+      {/* Task 2D: Modal - Configure Contributor PayPal Email */}
+      <ModalDialog
+        isOpen={showPayoutEmailModal}
+        onClose={() => setShowPayoutEmailModal(false)}
+        title="Configure PayPal payout email"
+        subtitle="Provide your PayPal account email to receive automated disbursements upon deliverable approval."
+      >
+        <form onSubmit={handleSavePayoutEmail}>
+          <div className="form-group">
+            <label className="field-label">PayPal account email</label>
+            <input
+              type="email"
+              className="input-field"
+              placeholder="contributor@example.com"
+              value={payoutEmailInput}
+              onChange={(e) => setPayoutEmailInput(e.target.value)}
+              required
+            />
+            <p
+              style={{
+                color: "var(--color-muted)",
+                fontSize: "var(--text-xs)",
+                marginTop: "var(--space-2xs)",
+                marginBottom: 0,
+              }}
+            >
+              Disbursements are sent via PayPal Payouts. Your address is masked and never exposed publicly.
+            </p>
+          </div>
+
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setShowPayoutEmailModal(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={payoutLoading}
+            >
+              {payoutLoading ? "Saving…" : "Save payout email"}
             </button>
           </div>
         </form>

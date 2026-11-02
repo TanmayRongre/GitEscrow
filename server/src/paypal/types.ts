@@ -271,3 +271,19 @@ export interface BalancesResponse {
   as_of_time?: string;
   last_refresh_time?: string;
 }
+
+// ---------------- Webhook Verification Types ----------------
+
+export interface VerifyWebhookSignaturePayload {
+  auth_algo: string;
+  cert_url: string;
+  transmission_id: string;
+  transmission_sig: string;
+  transmission_time: string;
+  webhook_id: string;
+  webhook_event: Record<string, any>;
+}
+
+export interface VerifyWebhookSignatureResponse {
+  verification_status: 'SUCCESS' | 'FAILURE';
+}

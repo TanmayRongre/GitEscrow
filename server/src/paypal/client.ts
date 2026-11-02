@@ -13,7 +13,9 @@ import {
   CreatePayoutPayload,
   CreatePayoutResponse,
   PayoutBatchResponse,
-  BalancesResponse
+  BalancesResponse,
+  VerifyWebhookSignaturePayload,
+  VerifyWebhookSignatureResponse
 } from './types';
 
 export class PayPalClient {
@@ -354,4 +356,42 @@ export class PayPalClient {
     const query = new URLSearchParams({ currency_code: currencyCode }).toString();
     return this.request<BalancesResponse>('GET', `/v1/reporting/balances?${query}`);
   }
+
+  /**
+   * Authoritatively verify PayPal webhook signature via PayPal REST API
+   */
+  public async verifyWebhookSignature(
+    payload: VerifyWebhookSignaturePayload
+  ): Promise<VerifyWebhookSignatureResponse> {
+    return this.request<VerifyWebhookSignatureResponse>(
+      'POST',
+      '/v1/notifications/verify-webhook-signature',
+      payload
+    );
+  }
+}
+
+let defaultPayPalClient: PayPalClient | null = null;
+
+export function setPayPalClient(client: PayPalClient | null): void {
+  defaultPayPalClient = client;
+}
+
+export function getPayPalClient(): PayPalClient {
+  if (defaultPayPalClient) return defaultPayPalClient;
+  const clientId = process.env.PAYPAL_CLIENT_ID || '';
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET || '';
+  const baseUrl = process.env.PAYPAL_BASE_URL || 'https://api-m.sandbox.paypal.com';
+
+  if (!clientId || !clientSecret) {
+    throw new Error('PayPal credentials missing: PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET not configured.');
+  }
+
+  defaultPayPalClient = new PayPalClient({
+    clientId,
+    clientSecret,
+    baseUrl,
+    enableLogging: process.env.NODE_ENV !== 'test'
+  });
+  return defaultPayPalClient;
 }

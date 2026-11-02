@@ -6,8 +6,8 @@ GitEscrow establishes an audited, milestone-based escrow lifecycle connecting sp
 
 - **Sponsor Funds Bounty**: Sponsor creates a bounty linked to a verified GitHub issue. Funding is handled via PayPal Orders v2 (captured for platform escrow or authorized for short milestone holds).
 - **AI-Powered Issue Analysis (Task 2B.2)**: Automatically deconstructs real GitHub issues into structured problem summaries, technical dependencies, logical phased milestones, and measurable acceptance criteria with integer-cent reward distribution.
-- **Sponsor Review & Authority**: AI output is strictly consultative. Sponsors review, edit, and explicitly approve milestones before saving or publishing. AI never captures funds, executes payouts, or approves payments.
-- **Contributor Solves Issue**: Contributor claims the issue, works on the implementation, and submits a pull request reference.
+- **Contributor PR Submission & Evidence Verification (Task 2C)**: Contributors submit GitHub Pull Requests against milestones. GitEscrow collects verified PR evidence (diffs, commit history, branch pointers, CI check-runs) and evaluates deliverables against sponsor-approved acceptance criteria using a deterministic keyword & AST matching engine with multi-provider LLM support.
+- **Sponsor Review & Authority**: AI output is strictly consultative. Sponsors review, edit, and explicitly approve milestones before saving or publishing. AI never captures funds, executes payouts, or approves payments. Final milestone acceptance authority belongs exclusively to the human sponsor.
 - **Audited Milestones & Release**: Sponsors inspect deliverables against predefined criteria and approve milestones, recording immutable audit events in an append-only ledger.
 - **Identity & RBAC (Task 2A)**: Full authentication layer with JWT access tokens, rotating HttpOnly refresh cookies with token reuse family invalidation, global roles (`USER`, `ADMIN`), and organization roles (`OWNER`, `SPONSOR`, `MEMBER`).
 - **Bounties, Milestones & Escrow Ledger (Task 2B.1)**: Atomic state machine, fractional milestone breakdown with integer-cent accuracy, live GitHub issue validation, and an append-only financial audit ledger.
@@ -28,12 +28,15 @@ GitEscrow (Monorepo)
 │   │   │   └── transitions.ts        # Lifecycle-safe animations and reduced-motion fallback
 │   │   ├── types/
 │   │   │   ├── bounty.ts             # TypeScript interfaces for Bounties, Milestones, Ledger
-│   │   │   └── ai.ts                 # TypeScript interfaces for AI Issue Analysis & Proposals
+│   │   │   ├── ai.ts                 # TypeScript interfaces for AI Issue Analysis & Proposals
+│   │   │   └── pr-verification.ts    # TypeScript interfaces for PR Evidence & AI Verification (Task 2C)
 │   │   ├── components/
 │   │   │   ├── BountyList.tsx        # Public marketplace view with status filter pills & search
 │   │   │   ├── BountyDetails.tsx     # Full bounty view with milestone timeline, tabs, and actions
 │   │   │   ├── CreateBountyForm.tsx  # Dynamic milestone builder with AI Assistant integration
 │   │   │   ├── AIAnalysisReviewModal.tsx # Hallmark-styled sponsor review & approval modal
+│   │   │   ├── MilestoneSubmitPRModal.tsx # Real-time repository-validated contributor submission modal
+│   │   │   ├── PRVerificationModal.tsx   # Evidence-based AI audit report & sponsor decision modal
 │   │   │   ├── LoginForm.tsx         # User authentication form
 │   │   │   ├── RegisterForm.tsx      # Developer registration form
 │   │   │   ├── UserProfile.tsx       # Profile management, RBAC verification, and org manager
@@ -54,11 +57,14 @@ GitEscrow (Monorepo)
 │   │   │   ├── Bounty.ts             # Bounty schema (Decimal128 amounts, GitHub issue references)
 │   │   │   ├── Milestone.ts          # Milestone schema (criteria, order uniqueness, decision notes)
 │   │   │   └── EscrowLedger.ts       # Append-only financial event ledger with mutation guards
-│   │   ├── ai/                       # AI Analysis Subsystem (Task 2B.2)
-│   │   │   ├── types.ts              # Zod schemas for request, milestones, and structured analysis
+│   │   ├── ai/                       # AI Analysis & Verification Subsystem (Tasks 2B.2 & 2C)
+│   │   │   ├── types.ts              # Zod schemas for issue analysis requests and proposals
+│   │   │   ├── pr-verification.types.ts # Zod schemas for PR evaluation, CI status, and audit reports
 │   │   │   ├── semantic-analyzer.ts  # Deterministic semantic deconstructor & cent distributor
+│   │   │   ├── deterministic-pr-verifier.ts # Deterministic criteria verification & diff auditor
 │   │   │   ├── client.ts             # LLM client (Gemini 2.0 / OpenAI) with prompt injection defense
 │   │   │   ├── ai.service.ts         # GitHub issue ingestion, caching, and amount scaling
+│   │   │   ├── pr-verification.service.ts # Contributor submission & sponsor review pipeline
 │   │   │   ├── ai.controller.ts      # REST controller for /api/ai/analyze-issue
 │   │   │   └── ai.routes.ts          # Rate-limited, authenticated AI routes
 │   │   ├── auth/
@@ -90,6 +96,7 @@ GitEscrow (Monorepo)
 │   │       ├── webhook.ts            # Timing-safe HMAC SHA-256 verifier
 │   │       └── webhook-router.ts     # Express router with raw-body signature validation
 │   ├── scripts/
+│   │   ├── test-pr-verification.ts   # 19-test automated suite for Contributor PR Submission & AI Verification (Task 2C)
 │   │   ├── test-ai-analysis.ts       # 17-test automated suite for AI Issue Analysis (Task 2B.2)
 │   │   ├── test-bounties.ts          # 34-test programmatic suite for Bounties, Milestones, Ledger
 │   │   ├── test-auth.ts              # 31-test automated suite for Auth, JWT, RBAC & Orgs
@@ -101,7 +108,7 @@ GitEscrow (Monorepo)
 │   │   └── .verify-auth-state.json   # Progress state for authorization/void (ignored by Git)
 │   ├── package.json
 │   └── tsconfig.json
-├── artifacts/screens/                # 22 captured browser screenshots across 11 desktop & mobile views
+├── artifacts/screens/                # 28 captured browser screenshots across 14 desktop & mobile views
 ├── .env.example                      # Canonical environment variable template
 ├── .gitignore                        # Git ignore rules protecting credentials and state files
 ├── LICENSE                           # MIT License
@@ -112,7 +119,6 @@ GitEscrow (Monorepo)
 ---
 
 ## 2. AI-Powered Issue Analysis & Milestone Criteria (Task 2B.2)
-
 
 ### 2.1 Core Architectural Principles
 
@@ -128,11 +134,10 @@ GitEscrow (Monorepo)
 
 GitEscrow enforces strict financial truthfulness across all payment operations. All verification scripts interact with PayPal Sandbox endpoints and maintain idempotent state.
 
-
 ### 3.1 Verified PayPal Capabilities
 
 | Capability                       | PayPal API Endpoint                             | Verified State / Test Result                                      | Status   |
-| ---                              | ---                                             | ---                                                               | ---      |
+| -------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- | -------- |
 | **OAuth2 Client Authentication** | `POST /v1/oauth2/token`                         | Bearer token retrieved (`length: 97`, valid ~3600s)               | **PASS** |
 | **Order Creation (Capture)**     | `POST /v2/checkout/orders`                      | Order `29W94452X2811371K` created ($100.00 USD)                   | **PASS** |
 | **Payment Capture**              | `POST /v2/checkout/orders/{id}/capture`         | Capture `1WC064007Y4652301` ($100.00 USD)                         | **PASS** |
@@ -143,12 +148,12 @@ GitEscrow enforces strict financial truthfulness across all payment operations. 
 | **Authorization Void**           | `POST /v2/payments/authorizations/{id}/void`    | Auth `0DF88378NN3582943` voided with status `VOIDED`              | **PASS** |
 | **Payouts API Scope & Auth**     | `GET /v1/payments/payouts/{id}`                 | Endpoint authenticated, OAuth scope recognized                    | **PASS** |
 
-
 ### 3.2 Payout Execution Limitation Notice
 
 > [!IMPORTANT]
 > **PayPal Sandbox Payouts Execution Status**:
 > While OAuth authorization and endpoint probing for the Payouts API succeed, automated payout execution against `POST /v1/payments/payouts` is subject to PayPal's sender account restriction:
+>
 > ```json
 > {
 >   "name": "USER_COUNTRY_NOT_SUPPORTED",
@@ -156,7 +161,9 @@ GitEscrow enforces strict financial truthfulness across all payment operations. 
 >   "information_link": "https://developer.paypal.com/docs/api/payments.payouts-batch/#errors"
 > }
 > ```
+>
 > In compliance with PayPal API terms and developer guidelines:
+>
 > 1. GitEscrow **does not synthesize fake payout confirmations**.
 > 2. Payout execution remains **fully modular and guarded** (`--run-payout` flag in verification suites).
 > 3. Production deployments require a PayPal Business account in a country permitted for automated Payouts.
@@ -177,24 +184,26 @@ GitEscrow's frontend follows the **Hallmark** design authority, implementing a s
 
 ---
 
+## 5. Visual Artifacts (28 Browser Screenshots)
 
-## 5. Visual Artifacts (22 Browser Screenshots)
+The project includes 28 browser screenshots captured across 14 application views for both Desktop (1440x900) and Mobile (390x844), stored in `artifacts/screens/`:
 
-The project includes 22 browser screenshots captured across 11 application views for both Desktop (1440x900) and Mobile (390x844), stored in `artifacts/screens/`:
-
-| View                               | Desktop Screenshot                         | Mobile Screenshot                         | Description                                                                                          |
-| ---                                | ---                                        | ---                                       | ---                                                                                                  |
-| **Public Marketplace**             | `01-public-marketplace-desktop.png`        | `01-public-marketplace-mobile.png`        | Unauthenticated bounty grid with status filters, search, and demo badges                             |
-| **Login**                          | `02-login-desktop.png`                     | `02-login-mobile.png`                     | Authentication form with credential fields and security notices                                      |
-| **Registration**                   | `03-registration-desktop.png`              | `03-registration-mobile.png`              | Developer registration form with password requirements                                               |
-| **Authenticated Marketplace**      | `04-authenticated-marketplace-desktop.png` | `04-authenticated-marketplace-mobile.png` | Marketplace with active session badge, user profile link, and role pill                              |
-| **Bounty Details**                 | `05-bounty-details-desktop.png`            | `05-bounty-details-mobile.png`            | Bounty view with GitHub issue link, sponsor info, and tab navigation                                 |
-| **Milestones**                     | `06-milestones-desktop.png`                | `06-milestones-mobile.png`                | Sequential milestone breakdown with deliverables and completion states                               |
-| **Escrow Ledger**                  | `07-escrow-ledger-desktop.png`             | `07-escrow-ledger-mobile.png`             | Append-only financial audit trail with event types and idempotency keys                              |
-| **Create Bounty**                  | `08-create-bounty-desktop.png`             | `08-create-bounty-mobile.png`             | Interactive milestone builder with dynamic sum calculation and validation                            |
-| **User Profile**                   | `09-user-profile-desktop.png`              | `09-user-profile-mobile.png`              | User credentials, RBAC permissions, and organization memberships                                     |
-| **AI Analysis Review Modal**       | `10-ai-analysis-modal-desktop.png`         | `10-ai-analysis-modal-mobile.png`         | **Task 2B.2**: AI decomposition review drawer with criteria checklist and allocation metrics         |
-| **Bounty Form with AI Milestones** | `11-bounty-form-ai-applied-desktop.png`    | `11-bounty-form-ai-applied-mobile.png`    | **Task 2B.2**: Populated draft with applied AI milestones, criteria, and sponsor verification notice |
+| View                               | Desktop Screenshot                           | Mobile Screenshot                           | Description                                                                                             |
+| ---------------------------------- | -------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Public Marketplace**             | `01-public-marketplace-desktop.png`          | `01-public-marketplace-mobile.png`          | Unauthenticated bounty grid with status filters, search, and demo badges                                |
+| **Login**                          | `02-login-desktop.png`                       | `02-login-mobile.png`                       | Authentication form with credential fields and security notices                                         |
+| **Registration**                   | `03-registration-desktop.png`                | `03-registration-mobile.png`                | Developer registration form with password requirements                                                  |
+| **Authenticated Marketplace**      | `04-authenticated-marketplace-desktop.png`   | `04-authenticated-marketplace-mobile.png`   | Marketplace with active session badge, user profile link, and role pill                                 |
+| **Bounty Details**                 | `05-bounty-details-desktop.png`              | `05-bounty-details-mobile.png`              | Bounty view with GitHub issue link, sponsor info, and tab navigation                                    |
+| **Milestones**                     | `06-milestones-desktop.png`                  | `06-milestones-mobile.png`                  | Sequential milestone breakdown with deliverables and completion states                                  |
+| **Escrow Ledger**                  | `07-escrow-ledger-desktop.png`               | `07-escrow-ledger-mobile.png`               | Append-only financial audit trail with event types and idempotency keys                                 |
+| **Create Bounty**                  | `08-create-bounty-desktop.png`               | `08-create-bounty-mobile.png`               | Interactive milestone builder with dynamic sum calculation and validation                               |
+| **User Profile**                   | `09-user-profile-desktop.png`                | `09-user-profile-mobile.png`                | User credentials, RBAC permissions, and organization memberships                                        |
+| **AI Analysis Review Modal**       | `10-ai-analysis-modal-desktop.png`           | `10-ai-analysis-modal-mobile.png`           | **Task 2B.2**: AI decomposition review drawer with criteria checklist and allocation metrics            |
+| **Bounty Form with AI Milestones** | `11-bounty-form-ai-applied-desktop.png`      | `11-bounty-form-ai-applied-mobile.png`      | **Task 2B.2**: Populated draft with applied AI milestones, criteria, and sponsor verification notice    |
+| **Contributor Submit PR Modal**    | `12-contributor-submit-pr-modal-desktop.png` | `12-contributor-submit-pr-modal-mobile.png` | **Task 2C**: Contributor PR submission modal with live repository validation and criteria checklist     |
+| **AI PR Verification Modal**       | `13-pr-verification-modal-desktop.png`       | `13-pr-verification-modal-mobile.png`       | **Task 2C**: Evidence-based AI verification audit report with criteria checks, CI runs & review actions |
+| **Milestone PR Applied View**      | `14-milestone-pr-applied-desktop.png`        | `14-milestone-pr-applied-mobile.png`        | **Task 2C**: Milestone details card showing submitted PR metadata, AI PASS badge, and audit history     |
 
 ---
 
@@ -217,7 +226,7 @@ cd gitescrow
 
 # Install all workspace dependencies
 npm run install:all
-````
+```
 
 ### Environment Configuration
 
@@ -226,7 +235,7 @@ Copy [.env.example](.env.example) to `.env` and `server/.env`:
 ```bash
 cp .env.example .env
 cp .env.example server/.env
-````
+```
 
 Configure your environment variables:
 
@@ -260,6 +269,7 @@ MONGODB_URI=mongodb://localhost:27017/gitescrow
 PORT=5000
 FRONTEND_URL=http://localhost:5173
 ```
+
 ### Running the Services
 
 ```bash
@@ -274,20 +284,23 @@ npm run dev:client
 
 ## 7. Verification & Complete Test Matrix
 
-All **87 automated backend tests** and frontend validation suites run deterministically without errors:
+All **174 automated backend tests** and frontend validation suites run deterministically without errors:
 
-| Suite | Command | Tests | Scope & Coverage | Status |
-|---|---|---|---|---|
-| **AI Issue Analysis** | `npm run test:ai` | **17 / 17** | **Task 2B.2**: Real issue ingestion (`#38090`, `#38092`), structured summary, Zod validation, integer-cent arithmetic, prompt injection defense, 401 auth guards, zero financial transactions | **PASS** |
-| **Bounties & Milestones** | `npm run test:bounties` | **34 / 34** | Bounty lifecycle, milestone ordering/sums, atomic race-free claims, locked milestone edits, append-only ledger guards, tenant isolation | **PASS** |
-| **Auth & RBAC** | `npm run test:auth` | **31 / 31** | User registration, login, anti-enumeration, token family reuse revocation, HttpOnly cookies, org RBAC, admin bootstrap locking | **PASS** |
-| **GitHub Webhooks** | `npm run test:webhook` | **5 / 5** | Timing-safe HMAC SHA-256 signatures, tampered payload rejection, duplicate delivery ID idempotency | **PASS** |
-| **GitHub Integration** | `npm run verify:github` | **4 / 4** | Live repo retrieval (`facebook/react`), issue listings, and single issue verification (`#38090`) | **PASS** |
-| **PayPal Sandbox** | `npm run verify:sandbox` | **10 / 10** | OAuth authentication, order creation, capture, partial refund ($30.00), remaining refund ($70.00), Payouts endpoint probing, MongoDB ping | **PASS** |
-| **PayPal Authorization** | `npm run verify:paypal-auth` | **4 / 4** | Order authorization, authorization capture ($50.00), separate order authorization, authorization void ($25.00) | **PASS** |
-| **Hallmark Sloplint** | `node .agent/skills/hallmark/scripts/sloplint.mjs client/src` | **16 files** | Enforces modern-minimal tokens, contrast ratios, and prevents generic UI slop (**0 FAIL, 0 REFLEX, 0 WARN**) | **PASS** |
-| **Client Build** | `npm run build:client` | **TypeScript + Vite** | Production chunking, assets, CSS bundling (0 errors) | **PASS** |
-| **Server Build** | `npm run build:server` | **TypeScript (tsc)** | Strict typechecking across models, services, and controllers (0 errors) | **PASS** |
+| Suite                     | Command                                                       | Tests                 | Scope & Coverage                                                                                                                                                                                                                                                                                                      | Status   |
+| ------------------------- | ------------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **Financial Integrity & Payouts** | `npm run test:payouts`                                        | **40 / 40**           | **Task 2D & 2E.1**: Authoritative PayPal capture verification, cross-bounty unique capture constraints, atomic milestone locks, network timeout UNCERTAIN state, idempotency replay recovery, cancellation & refund pipeline, webhook deduplication, append-only ledger mutation guards | **PASS** |
+| **Task 2C.1 Audit**       | `npm run audit:2c1`                                           | **28 / 28**           | **Task 2C.1**: Complete 10-step contributor workflow with real GitHub issue & PR telemetry, financial integrity audit (zero funds transferred, 0 external debits, AI ledger write isolation, duplicate approval & idempotency rejection), security boundaries (self-approval, tenant isolation, repo mismatch guards), real GitHub matrix | **PASS** |
+| **PR Verification**       | `npm run test:pr-verification`                                | **19 / 19**           | **Task 2C**: URL parsing, repo mismatch guards, contributor auth checks, diff inspection, criteria evaluation, facts/interpretations separation, CI status handling, prompt injection containment, sponsor review & change requests, resubmission continuity, immutable escrow ledger approval, 0 financial mutations | **PASS** |
+| **AI Issue Analysis**     | `npm run test:ai`                                             | **17 / 17**           | **Task 2B.2**: Real issue ingestion (`#38090`, `#38092`), structured summary, Zod validation, integer-cent arithmetic, prompt injection defense, 401 auth guards, zero financial transactions                                                                                                                         | **PASS** |
+| **Bounties & Milestones** | `npm run test:bounties`                                       | **34 / 34**           | Bounty lifecycle, milestone ordering/sums, atomic race-free claims, locked milestone edits, append-only ledger guards, tenant isolation                                                                                                                                                                               | **PASS** |
+| **Auth & RBAC**           | `npm run test:auth`                                           | **31 / 31**           | User registration, login, anti-enumeration, token family reuse revocation, HttpOnly cookies, org RBAC, admin bootstrap locking                                                                                                                                                                                        | **PASS** |
+| **GitHub Webhooks**       | `npm run test:webhook`                                        | **5 / 5**             | Timing-safe HMAC SHA-256 signatures, tampered payload rejection, duplicate delivery ID idempotency                                                                                                                                                                                                                    | **PASS** |
+| **GitHub Integration**    | `npm run verify:github`                                       | **4 / 4**             | Live repo retrieval (`facebook/react`), issue listings, and single issue verification (`#38090`)                                                                                                                                                                                                                      | **PASS** |
+| **PayPal Sandbox**        | `npm run verify:sandbox`                                      | **10 / 10**           | OAuth authentication, order creation, capture, partial refund ($30.00), remaining refund ($70.00), Payouts endpoint probing, MongoDB ping                                                                                                                                                                             | **PASS** |
+| **PayPal Authorization**  | `npm run verify:paypal-auth`                                  | **4 / 4**             | Order authorization, authorization capture ($50.00), separate order authorization, authorization void ($25.00)                                                                                                                                                                                                        | **PASS** |
+| **Hallmark Sloplint**     | `node .agent/skills/hallmark/scripts/sloplint.mjs client/src` | **18 files**          | Enforces modern-minimal tokens, contrast ratios, and prevents generic UI slop (**0 FAIL, 0 REFLEX, 0 WARN**)                                                                                                                                                                                                          | **PASS** |
+| **Client Build**          | `npm run build:client`                                        | **TypeScript + Vite** | Production chunking, assets, CSS bundling (0 errors)                                                                                                                                                                                                                                                                  | **PASS** |
+| **Server Build**          | `npm run build:server`                                        | **TypeScript (tsc)**  | Strict typechecking across models, services, and controllers (0 errors)                                                                                                                                                                                                                                               | **PASS** |
 
 ---
 

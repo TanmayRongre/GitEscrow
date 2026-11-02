@@ -4,6 +4,7 @@ import { Bounty, IBounty } from "../models/Bounty";
 import { IUser } from "../models/User";
 import { OrganizationRole } from "../models/Organization";
 import { LedgerService } from "./ledger.service";
+import { PayoutService } from "../paypal/payout.service";
 
 export class MilestoneError extends Error {
   public readonly status: number;
@@ -422,6 +423,18 @@ export class MilestoneService {
       },
       createdBy: actor._id,
     });
+
+    // Trigger safe PayPal milestone payout lifecycle (Task 2D)
+    try {
+      if (bounty.fundingStatus === "FUNDED" || bounty.fundingStatus === "PARTIALLY_DISBURSED") {
+        await PayoutService.executeMilestonePayout(milestone._id, actor);
+      } else {
+        milestone.payoutStatus = "UNPAID";
+        await milestone.save();
+      }
+    } catch (payoutErr: any) {
+      console.warn(`[MilestoneService] Milestone payout deferred/queued: ${payoutErr.message}`);
+    }
 
     return milestone;
   }

@@ -3,6 +3,7 @@ import mongoose, { Document, Schema, Model } from 'mongoose';
 export type LedgerEventType =
   | 'FUNDING_INITIATED'
   | 'FUNDING_CAPTURED'
+  | 'FUNDING_REFUNDED'
   | 'REFUND_INITIATED'
   | 'REFUND_COMPLETED'
   | 'MILESTONE_APPROVED'
@@ -54,6 +55,7 @@ const EscrowLedgerSchema = new Schema<IEscrowLedger>(
       enum: [
         'FUNDING_INITIATED',
         'FUNDING_CAPTURED',
+        'FUNDING_REFUNDED',
         'REFUND_INITIATED',
         'REFUND_COMPLETED',
         'MILESTONE_APPROVED',

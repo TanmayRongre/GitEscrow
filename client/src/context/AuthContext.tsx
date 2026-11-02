@@ -9,6 +9,7 @@ export interface User {
   role: 'USER' | 'ADMIN';
   accountStatus: 'ACTIVE' | 'SUSPENDED' | 'DELETED';
   avatarUrl?: string;
+  paypalEmail?: string;
   lastLoginAt?: string;
   createdAt?: string;
 }

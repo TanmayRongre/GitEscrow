@@ -13,6 +13,14 @@ export type BountyStatus =
 
 export type BountyCurrency = 'USD';
 
+export type FundingStatus =
+  | 'UNFUNDED'
+  | 'FUNDING_INITIATED'
+  | 'FUNDED'
+  | 'PARTIALLY_DISBURSED'
+  | 'FULLY_DISBURSED'
+  | 'REFUNDED';
+
 export interface IBountyStatusHistory {
   fromStatus: BountyStatus;
   toStatus: BountyStatus;
@@ -45,6 +53,17 @@ export interface IBounty extends Document {
   rewardAmount: mongoose.Types.Decimal128;
   currency: BountyCurrency;
   rewardDescription?: string;
+
+  // Financial & Funding Allocation Status (Task 2D)
+  fundingStatus: FundingStatus;
+  fundedAmount: mongoose.Types.Decimal128;
+  fundedAmountCents: number;
+  disbursedAmount: mongoose.Types.Decimal128;
+  disbursedAmountCents: number;
+  reservedAmount: mongoose.Types.Decimal128;
+  reservedAmountCents: number;
+  inboundCaptureId?: string;
+  inboundOrderId?: string;
 
   // Bounty Status
   status: BountyStatus;
@@ -206,6 +225,57 @@ const BountySchema = new Schema<IBounty>(
       maxlength: [500, 'Reward description cannot exceed 500 characters']
     },
 
+    // Financial & Funding Allocation Status (Task 2D)
+    fundingStatus: {
+      type: String,
+      enum: [
+        'UNFUNDED',
+        'FUNDING_INITIATED',
+        'FUNDED',
+        'PARTIALLY_DISBURSED',
+        'FULLY_DISBURSED',
+        'REFUNDED'
+      ],
+      default: 'UNFUNDED',
+      index: true
+    },
+    fundedAmount: {
+      type: Schema.Types.Decimal128,
+      default: () => mongoose.Types.Decimal128.fromString('0.00')
+    },
+    fundedAmountCents: {
+      type: Number,
+      default: 0
+    },
+    disbursedAmount: {
+      type: Schema.Types.Decimal128,
+      default: () => mongoose.Types.Decimal128.fromString('0.00')
+    },
+    disbursedAmountCents: {
+      type: Number,
+      default: 0
+    },
+    reservedAmount: {
+      type: Schema.Types.Decimal128,
+      default: () => mongoose.Types.Decimal128.fromString('0.00')
+    },
+    reservedAmountCents: {
+      type: Number,
+      default: 0
+    },
+    inboundCaptureId: {
+      type: String,
+      trim: true,
+      default: undefined,
+      unique: true,
+      sparse: true
+    },
+    inboundOrderId: {
+      type: String,
+      trim: true,
+      default: undefined
+    },
+
     // Bounty Status
     status: {
       type: String,
@@ -275,6 +345,15 @@ const BountySchema = new Schema<IBounty>(
         if (ret.rewardAmount) {
           ret.rewardAmount = parseFloat(ret.rewardAmount.toString());
         }
+        if (ret.fundedAmount) {
+          ret.fundedAmount = parseFloat(ret.fundedAmount.toString());
+        }
+        if (ret.disbursedAmount) {
+          ret.disbursedAmount = parseFloat(ret.disbursedAmount.toString());
+        }
+        if (ret.reservedAmount) {
+          ret.reservedAmount = parseFloat(ret.reservedAmount.toString());
+        }
         return ret;
       }
     },
@@ -284,6 +363,15 @@ const BountySchema = new Schema<IBounty>(
         ret.id = ret._id;
         if (ret.rewardAmount) {
           ret.rewardAmount = parseFloat(ret.rewardAmount.toString());
+        }
+        if (ret.fundedAmount) {
+          ret.fundedAmount = parseFloat(ret.fundedAmount.toString());
+        }
+        if (ret.disbursedAmount) {
+          ret.disbursedAmount = parseFloat(ret.disbursedAmount.toString());
+        }
+        if (ret.reservedAmount) {
+          ret.reservedAmount = parseFloat(ret.reservedAmount.toString());
         }
         return ret;
       }

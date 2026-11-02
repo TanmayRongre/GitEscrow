@@ -171,3 +171,9 @@ export const bountyQuerySchema = z.object({
   maxReward: z.coerce.number().min(0).optional(),
   currency: z.literal("USD").optional(),
 });
+
+export const fundBountySchema = z.object({
+  paypalCaptureId: z.string().trim().min(3, "PayPal capture ID is required"),
+  paypalOrderId: z.string().trim().optional(),
+  amount: z.number().positive("Funded amount must be a positive number")
+});
