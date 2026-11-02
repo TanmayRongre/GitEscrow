@@ -1,0 +1,48 @@
+{
+  "name": "gitescrow-server",
+  "version": "1.0.0",
+  "description": "GitEscrow backend server and escrow ledger service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "verify:sandbox": "tsx scripts/verify-sandbox.ts",
+    "verify:paypal": "tsx scripts/verify-sandbox.ts",
+    "verify:paypal-auth": "tsx scripts/verify-paypal-authorization.ts",
+    "verify:github": "tsx scripts/verify-github.ts",
+    "test:webhook": "tsx scripts/test-webhook-endpoint.ts",
+    "test:auth": "tsx scripts/test-auth.ts",
+    "test:bounties": "tsx scripts/test-bounties.ts",
+    "test:ai": "tsx scripts/test-ai-analysis.ts"
+  },
+  "keywords": [
+    "escrow",
+    "paypal",
+    "github",
+    "bounties"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.9.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.10.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

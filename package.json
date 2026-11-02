@@ -1,0 +1,30 @@
+{
+  "name": "gitescrow-monorepo",
+  "version": "1.0.0",
+  "description": "GitEscrow: AI-driven escrow platform for open-source GitHub bounties powered by PayPal",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build:server": "npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "verify:sandbox": "npm run verify:sandbox --prefix server --",
+    "verify:paypal": "npm run verify:sandbox --prefix server --",
+    "verify:paypal-auth": "npm run verify:paypal-auth --prefix server --",
+    "verify:github": "npm run verify:github --prefix server --",
+    "test:webhook": "npm run test:webhook --prefix server",
+    "test:auth": "npm run test:auth --prefix server",
+    "test:bounties": "npm run test:bounties --prefix server",
+    "test:ai": "npm run test:ai --prefix server"
+  },
+  "keywords": [
+    "escrow",
+    "paypal",
+    "github",
+    "bounties",
+    "ai-agent",
+    "hackathon"
+  ],
+  "author": "",
+  "license": "MIT"
+}
