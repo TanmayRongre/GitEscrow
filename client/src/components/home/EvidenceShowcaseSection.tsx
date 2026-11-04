@@ -25,18 +25,7 @@ export function EvidenceShowcaseSection() {
           }}
         >
           {/* Header Bar */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "var(--space-12)",
-              padding: "var(--space-16) var(--space-24)",
-              borderBottom: "1px solid var(--border-dark)",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
-            }}
-          >
+          <div className="evidence-card-bar">
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-12)" }}>
               <span
                 style={{
@@ -88,15 +77,7 @@ export function EvidenceShowcaseSection() {
           </div>
 
           {/* Two Distinct Labeled Panels Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: "var(--space-24)",
-              padding: "var(--space-24)",
-              alignItems: "start",
-            }}
-          >
+          <div className="responsive-evidence-grid">
             {/* Panel 1: CI Results (from GitHub) */}
             <div
               style={{
@@ -307,18 +288,7 @@ export function EvidenceShowcaseSection() {
           </div>
 
           {/* Action Bar (Sample UI Display Only) */}
-          <div
-            style={{
-              padding: "var(--space-16) var(--space-24)",
-              borderTop: "1px solid var(--border-dark)",
-              backgroundColor: "rgba(0, 0, 0, 0.3)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "var(--space-16)",
-            }}
-          >
+          <div className="evidence-card-footer">
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "#CBD5E1" }}>
                 Sponsor review action required to trigger payout disbursement.

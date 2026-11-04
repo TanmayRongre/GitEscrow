@@ -42,38 +42,20 @@ export function HowItWorksSection() {
         </div>
 
         {/* 4 Steps Timeline Grid with Connecting Line */}
-        <div
-          style={{
-            position: "relative",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "var(--space-24)",
-            alignItems: "stretch",
-          }}
-        >
+        <div className="responsive-steps-grid">
           {/* Subtle Connecting Line visible across card gaps */}
-          <div
-            style={{
-              position: "absolute",
-              top: "38px",
-              left: "40px",
-              right: "40px",
-              height: "2px",
-              backgroundColor: "var(--border-light)",
-              zIndex: 0,
-            }}
-          />
+          <div className="steps-timeline-rule" />
 
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
               <div
                 key={idx}
+                className="responsive-card-md"
                 style={{
                   backgroundColor: "var(--cream)",
                   border: "1px solid var(--border-light)",
                   borderRadius: "var(--radius-card)",
-                  padding: "var(--space-24)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "var(--space-16)",

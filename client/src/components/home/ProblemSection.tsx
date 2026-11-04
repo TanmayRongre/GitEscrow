@@ -29,21 +29,14 @@ export function ProblemSection() {
         </div>
 
         {/* 2-Column Comparison Grid without VS hacks */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: "var(--space-24)",
-            alignItems: "stretch",
-          }}
-        >
+        <div className="responsive-two-col-grid">
           {/* Column 1: Traditional Bounties */}
           <div
+            className="responsive-card-lg"
             style={{
               backgroundColor: "var(--cream-sunk)",
               border: "1px solid var(--border-light)",
               borderRadius: "var(--radius-card)",
-              padding: "var(--space-32)",
               display: "flex",
               flexDirection: "column",
               gap: "var(--space-20)",
@@ -97,11 +90,11 @@ export function ProblemSection() {
 
           {/* Column 2: GitEscrow */}
           <div
+            className="responsive-card-lg"
             style={{
               backgroundColor: "var(--cream-sunk)",
               border: "1px solid var(--border-light)",
               borderRadius: "var(--radius-card)",
-              padding: "var(--space-32)",
               display: "flex",
               flexDirection: "column",
               gap: "var(--space-20)",

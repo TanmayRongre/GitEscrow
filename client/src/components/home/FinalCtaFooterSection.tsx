@@ -24,9 +24,9 @@ export function FinalCtaFooterSection({
             display: "flex",
             flexDirection: "column",
             gap: 0,
-            paddingBottom: "var(--space-64)",
+            paddingBottom: "var(--section-header-mb)",
             borderBottom: "1px solid var(--border-dark)",
-            marginBottom: "var(--space-48)",
+            marginBottom: "var(--section-header-mb)",
           }}
         >
           <h2

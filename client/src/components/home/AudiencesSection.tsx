@@ -53,22 +53,15 @@ export function AudiencesSection({
         </div>
 
         {/* 2 Symmetric Columns */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: "var(--space-24)",
-            alignItems: "stretch",
-          }}
-        >
+        <div className="responsive-two-col-grid">
           {/* Column 1: For Contributors */}
           <div
             id="for-developers"
+            className="responsive-card-lg"
             style={{
               backgroundColor: "var(--cream-sunk)",
               border: "1px solid var(--border-light)",
               borderRadius: "var(--radius-card)",
-              padding: "var(--space-32)",
               display: "flex",
               flexDirection: "column",
               gap: "var(--space-24)",
@@ -148,11 +141,11 @@ export function AudiencesSection({
           {/* Column 2: For Sponsors */}
           <div
             id="for-sponsors"
+            className="responsive-card-lg"
             style={{
               backgroundColor: "var(--cream-sunk)",
               border: "1px solid var(--border-light)",
               borderRadius: "var(--radius-card)",
-              padding: "var(--space-32)",
               display: "flex",
               flexDirection: "column",
               gap: "var(--space-24)",

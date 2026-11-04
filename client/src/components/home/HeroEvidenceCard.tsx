@@ -178,7 +178,7 @@ export function HeroEvidenceCard() {
       </div>
 
       {/* Tab Panels */}
-      <div ref={panelRef} style={{ padding: "var(--space-20)" }}>
+      <div ref={panelRef} className="responsive-card-md">
         {/* Tab 1: Issue */}
         {activeTab === "issue" && (
           <div
