@@ -8,11 +8,11 @@ export function HeroTrustRow() {
     },
     {
       icon: ShieldCheck,
-      text: "Automated checks inspect PR evidence",
+      text: "Automated checks inspect pull request evidence",
     },
     {
       icon: CheckCircle2,
-      text: "Direct payout on sponsor sign-off",
+      text: "Direct payout released on sponsor approval",
     },
   ];
 
@@ -20,9 +20,9 @@ export function HeroTrustRow() {
     <div
       className="hero-trust-row"
       style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: "var(--space-16)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--space-12)",
         paddingTop: "var(--space-24)",
         marginTop: "var(--space-32)",
         borderTop: "1px solid var(--border-dark)",
@@ -35,8 +35,8 @@ export function HeroTrustRow() {
             key={index}
             style={{
               display: "flex",
-              alignItems: "flex-start",
-              gap: "var(--space-8)",
+              alignItems: "center",
+              gap: "var(--space-12)",
             }}
           >
             <div
@@ -46,7 +46,6 @@ export function HeroTrustRow() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginTop: "2px",
               }}
             >
               <Icon size={18} strokeWidth={1.75} />
@@ -54,8 +53,8 @@ export function HeroTrustRow() {
             <p
               style={{
                 fontFamily: "var(--font-body)",
-                fontSize: "13px",
-                lineHeight: 1.45,
+                fontSize: "14px",
+                lineHeight: 1.4,
                 color: "#CBD5E1",
                 margin: 0,
               }}
