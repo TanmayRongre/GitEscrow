@@ -263,16 +263,19 @@ export class BountyService {
    * Lists bounties with filters and pagination.
    * Default public view shows 'OPEN' bounties.
    */
-  public static async listBounties(filters: {
-    page?: number;
-    limit?: number;
-    status?: BountyStatus;
-    repository?: string;
-    organization?: string;
-    minReward?: number;
-    maxReward?: number;
-    currency?: "USD";
-  }): Promise<{
+  public static async listBounties(
+    filters: {
+      page?: number;
+      limit?: number;
+      status?: BountyStatus | "ALL";
+      repository?: string;
+      organization?: string;
+      minReward?: number;
+      maxReward?: number;
+      currency?: "USD";
+    },
+    actor?: IUser
+  ): Promise<{
     bounties: IBounty[];
     total: number;
     page: number;
@@ -283,7 +286,28 @@ export class BountyService {
     const limit = Math.min(100, Math.max(1, filters.limit || 20));
     const query: any = {};
 
-    if (filters.status) {
+    if (filters.status === "ALL") {
+      // Return all permitted statuses while strictly enforcing tenant isolation on private drafts
+      if (actor && actor.role === "ADMIN") {
+        // Global admin can view all bounties across all statuses
+      } else if (actor) {
+        // Authenticated user: can see all published/active non-draft bounties,
+        // plus DRAFT bounties they created or that belong to their organizations
+        const userOrgs = await Organization.find({
+          $or: [{ ownerId: actor._id }, { "members.userId": actor._id }],
+        }).select("_id");
+        const userOrgIds = userOrgs.map((o) => o._id);
+
+        query.$or = [
+          { status: { $ne: "DRAFT" } },
+          { status: "DRAFT", createdBy: actor._id },
+          { status: "DRAFT", organizationId: { $in: userOrgIds } },
+        ];
+      } else {
+        // Unauthenticated guest: can see all public non-draft bounties, but NO drafts
+        query.status = { $ne: "DRAFT" };
+      }
+    } else if (filters.status) {
       query.status = filters.status;
     } else {
       // Default to public OPEN bounties
@@ -329,6 +353,7 @@ export class BountyService {
         .limit(limit)
         .populate("organizationId", "name slug logoUrl")
         .populate("assignedContributorId", "name username avatarUrl")
+        .populate("createdBy", "name username avatarUrl")
         .exec(),
       Bounty.countDocuments(query),
     ]);
@@ -339,6 +364,253 @@ export class BountyService {
       page,
       limit,
       totalPages: Math.ceil(total / limit) || 1,
+    };
+  }
+
+  /**
+   * Returns authoritative global dashboard KPI metrics across the complete dataset.
+   * Enforces exact authorization, organization membership, tenant isolation, and draft visibility.
+   */
+  public static async getSummary(actor?: IUser): Promise<{
+    activeBounties: number;
+    sponsoredBounties: number;
+    claimedBounties: number;
+    reviewsAwaiting: number;
+    escrowFundedCents: number;
+    escrowDisbursedCents: number;
+    formattedFunded: string;
+    formattedDisbursed: string;
+    totalBounties: number;
+    draftsCount: number;
+    userContext: {
+      authenticated: boolean;
+      userId?: string;
+      username?: string;
+      role?: string;
+    };
+    metrics: {
+      activeBounties: number;
+      sponsoredBounties: number;
+      claimedBounties: number;
+      reviewsAwaiting: number;
+      escrowFundedCents: number;
+      escrowDisbursedCents: number;
+      totalBounties: number;
+      draftsCount: number;
+    };
+  }> {
+    const isGlobalAdmin = actor?.role === "ADMIN";
+
+    // 1. Resolve actor's organization memberships and sponsorship roles
+    let userOrgIds: mongoose.Types.ObjectId[] = [];
+    let userSponsorOrgIds: mongoose.Types.ObjectId[] = [];
+
+    if (actor) {
+      const orgs = await Organization.find({
+        $or: [{ ownerId: actor._id }, { "members.userId": actor._id }],
+      }).select("_id ownerId members");
+
+      userOrgIds = orgs.map((o) => o._id);
+      userSponsorOrgIds = orgs
+        .filter((o) => {
+          if (o.ownerId.toString() === actor._id.toString()) return true;
+          const member = o.members.find(
+            (m) => m.userId.toString() === actor._id.toString(),
+          );
+          return (
+            member && (member.role === "OWNER" || member.role === "SPONSOR")
+          );
+        })
+        .map((o) => o._id);
+    }
+
+    // 2. Build tenant-isolated query filters
+    // Active Bounties: OPEN, ASSIGNED, IN_PROGRESS across all publicly accessible bounties
+    const activeQuery = {
+      status: { $in: ["OPEN", "ASSIGNED", "IN_PROGRESS"] },
+    };
+
+    // Sponsored Bounties Query: created by user OR their owned/sponsored orgs
+    let sponsoredQuery: any = null;
+    if (actor) {
+      const orConditions: any[] = [{ createdBy: actor._id }];
+      if (userSponsorOrgIds.length > 0) {
+        orConditions.push({ organizationId: { $in: userSponsorOrgIds } });
+      }
+      sponsoredQuery = { $or: orConditions };
+    }
+
+    // Reviews Awaiting Sign-off Query: SUBMITTED or UNDER_REVIEW requiring sponsor approval
+    let reviewsQuery: any = null;
+    if (isGlobalAdmin) {
+      // Global admin can review and approve any submitted bounty across the platform
+      reviewsQuery = { status: { $in: ["SUBMITTED", "UNDER_REVIEW"] } };
+    } else if (actor && sponsoredQuery) {
+      // Regular user: can only sign off on bounties they or their org sponsored
+      reviewsQuery = {
+        status: { $in: ["SUBMITTED", "UNDER_REVIEW"] },
+        ...sponsoredQuery,
+      };
+    }
+
+    // Claimed Bounties Query: assigned to actor as contributor
+    const claimedQuery = actor
+      ? { assignedContributorId: actor._id }
+      : null;
+
+    // Drafts Count Query: tenant-isolated draft visibility
+    let draftsQuery: any = null;
+    if (isGlobalAdmin) {
+      draftsQuery = { status: "DRAFT" };
+    } else if (actor) {
+      const orConditions: any[] = [{ status: "DRAFT", createdBy: actor._id }];
+      if (userOrgIds.length > 0) {
+        orConditions.push({
+          status: "DRAFT",
+          organizationId: { $in: userOrgIds },
+        });
+      }
+      draftsQuery = { $or: orConditions };
+    }
+
+    // Total Accessible Bounties Query (matches status=ALL filtering)
+    let totalQuery: any = {};
+    if (isGlobalAdmin) {
+      totalQuery = {};
+    } else if (actor) {
+      const orConditions: any[] = [
+        { status: { $ne: "DRAFT" } },
+        { status: "DRAFT", createdBy: actor._id },
+      ];
+      if (userOrgIds.length > 0) {
+        orConditions.push({
+          status: "DRAFT",
+          organizationId: { $in: userOrgIds },
+        });
+      }
+      totalQuery = { $or: orConditions };
+    } else {
+      totalQuery = { status: { $ne: "DRAFT" } };
+    }
+
+    // 3. Financial Aggregation Pipeline for Escrow Funded & Disbursed
+    const financialPipeline = actor
+      ? [
+          { $match: sponsoredQuery },
+          {
+            $group: {
+              _id: null,
+              totalFundedCents: {
+                $sum: {
+                  $cond: [
+                    { $gt: ["$fundedAmountCents", 0] },
+                    "$fundedAmountCents",
+                    {
+                      $cond: [
+                        { $gt: ["$fundedAmount", 0] },
+                        { $multiply: [{ $toDouble: "$fundedAmount" }, 100] },
+                        {
+                          $cond: [
+                            { $eq: ["$fundingStatus", "FUNDED"] },
+                            {
+                              $multiply: [
+                                { $toDouble: "$rewardAmount" },
+                                100,
+                              ],
+                            },
+                            0,
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+              totalDisbursedCents: {
+                $sum: {
+                  $cond: [
+                    { $gt: ["$disbursedAmountCents", 0] },
+                    "$disbursedAmountCents",
+                    {
+                      $cond: [
+                        { $gt: ["$disbursedAmount", 0] },
+                        {
+                          $multiply: [
+                            { $toDouble: "$disbursedAmount" },
+                            100,
+                          ],
+                        },
+                        0,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ]
+      : null;
+
+    // 4. Run queries concurrently in parallel
+    const [
+      activeBounties,
+      sponsoredBounties,
+      claimedBounties,
+      reviewsAwaiting,
+      draftsCount,
+      totalBounties,
+      financialAgg,
+    ] = await Promise.all([
+      Bounty.countDocuments(activeQuery),
+      sponsoredQuery
+        ? Bounty.countDocuments(sponsoredQuery)
+        : Promise.resolve(0),
+      claimedQuery
+        ? Bounty.countDocuments(claimedQuery)
+        : Promise.resolve(0),
+      reviewsQuery ? Bounty.countDocuments(reviewsQuery) : Promise.resolve(0),
+      draftsQuery ? Bounty.countDocuments(draftsQuery) : Promise.resolve(0),
+      Bounty.countDocuments(totalQuery),
+      financialPipeline
+        ? Bounty.aggregate(financialPipeline)
+        : Promise.resolve([]),
+    ]);
+
+    const escrowFundedCents = Math.round(
+      financialAgg[0]?.totalFundedCents || 0,
+    );
+    const escrowDisbursedCents = Math.round(
+      financialAgg[0]?.totalDisbursedCents || 0,
+    );
+
+    const formatUSD = (cents: number) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(cents / 100);
+
+    const metrics = {
+      activeBounties,
+      sponsoredBounties,
+      claimedBounties,
+      reviewsAwaiting,
+      escrowFundedCents,
+      escrowDisbursedCents,
+      totalBounties,
+      draftsCount,
+    };
+
+    return {
+      ...metrics,
+      formattedFunded: formatUSD(escrowFundedCents),
+      formattedDisbursed: formatUSD(escrowDisbursedCents),
+      userContext: {
+        authenticated: !!actor,
+        userId: actor?._id?.toString(),
+        username: actor?.username,
+        role: actor?.role,
+      },
+      metrics,
     };
   }
 

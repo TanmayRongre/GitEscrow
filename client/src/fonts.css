@@ -1,0 +1,68 @@
+/* Teodor Trial by Displaay Type Foundry (displaay.net)
+   License: Personal Use Only (Befonts-License.txt) */
+
+@font-face {
+  font-family: 'Teodor';
+  src: url('/fonts/TeodorTRIAL-Light-BF672198fb5c0ea.otf') format('opentype'),
+       url('./assets/TeodorTRIAL-Light-BF672198fb5c0ea.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Teodor';
+  src: url('/fonts/TeodorTRIAL-Regular-BF672198fb97abe.otf') format('opentype'),
+       url('./assets/TeodorTRIAL-Regular-BF672198fb97abe.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Teodor';
+  src: url('/fonts/TeodorTRIAL-Medium-BF672198fb97adf.otf') format('opentype'),
+       url('./assets/TeodorTRIAL-Medium-BF672198fb97adf.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Teodor';
+  src: url('/fonts/TeodorTRIAL-SemiBold-BF672198fba498a.otf') format('opentype'),
+       url('./assets/TeodorTRIAL-SemiBold-BF672198fba498a.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Teodor';
+  src: url('/fonts/TeodorTRIAL-Bold-BF672198fba5748.otf') format('opentype'),
+       url('./assets/TeodorTRIAL-Bold-BF672198fba5748.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Teodor';
+  src: url('/fonts/TeodorTRIAL-Thin-BF672198fb9fdb1.otf') format('opentype'),
+       url('./assets/TeodorTRIAL-Thin-BF672198fb9fdb1.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Anthropic Sans Display by BSPK LLC & Anthropic PBC
+   Copyright 2025 Anthropic PBC */
+@font-face {
+  font-family: 'Anthropic Sans Display';
+  src: url('/fonts/AnthropicSans-Display-Regular-Static.otf') format('opentype'),
+       url('./assets/AnthropicSans-Display-Regular-Static.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+

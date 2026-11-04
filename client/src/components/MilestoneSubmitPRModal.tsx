@@ -111,7 +111,7 @@ export function MilestoneSubmitPRModal({
           <div>
             <h2
               id="submit-pr-modal-title"
-              className="text-base font-semibold text-[var(--color-ink)]"
+              className="text-base font-medium text-[var(--color-ink)]"
             >
               Submit GitHub pull request
             </h2>
@@ -144,7 +144,7 @@ export function MilestoneSubmitPRModal({
             <span className="field-label mb-0 text-[11px]">
               Required repository
             </span>
-            <p className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+            <p className="font-mono text-xs font-medium text-[var(--color-ink)]">
               {expectedRepo}
             </p>
             <p className="text-[11px] text-[var(--color-muted)]">

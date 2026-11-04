@@ -163,6 +163,7 @@ export const bountyQuerySchema = z.object({
       "COMPLETED",
       "CANCELLED",
       "EXPIRED",
+      "ALL",
     ])
     .optional(),
   repository: z.string().trim().optional(),

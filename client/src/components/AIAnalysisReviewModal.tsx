@@ -190,7 +190,7 @@ export function AIAnalysisReviewModal({
           {/* Technical Scope & Requirements */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border border-[var(--color-rule)] rounded-[var(--radius-card)] p-3 space-y-2 bg-[var(--color-paper-3)]">
-              <p className="text-xs font-semibold text-[var(--color-ink)]">
+              <p className="text-xs font-medium text-[var(--color-ink)]">
                 Technical requirements
               </p>
               <ul className="text-xs space-y-1 text-[var(--color-muted)] list-disc pl-4">
@@ -200,7 +200,7 @@ export function AIAnalysisReviewModal({
               </ul>
             </div>
             <div className="border border-[var(--color-rule)] rounded-[var(--radius-card)] p-3 space-y-2 bg-[var(--color-paper-3)]">
-              <p className="text-xs font-semibold text-[var(--color-ink)]">
+              <p className="text-xs font-medium text-[var(--color-ink)]">
                 Dependencies & affected modules
               </p>
               <div className="flex flex-wrap gap-1">
@@ -231,7 +231,7 @@ export function AIAnalysisReviewModal({
               </label>
               <span className="text-xs font-mono text-[var(--color-muted)]">
                 Total allocation:{" "}
-                <span className="font-semibold text-[var(--color-ink)]">
+                <span className="font-medium text-[var(--color-ink)]">
                   ${totalCalculated.toFixed(2)} USD
                 </span>
               </span>
@@ -253,12 +253,12 @@ export function AIAnalysisReviewModal({
                           {m.weightPercentage}% weight
                         </span>
                       </div>
-                      <p className="text-sm font-semibold text-[var(--color-ink)]">
+                      <p className="text-sm font-medium text-[var(--color-ink)]">
                         {m.title}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="font-mono text-base font-bold text-[var(--color-ink)]">
+                      <span className="font-mono text-base font-medium text-[var(--color-ink)]">
                         ${m.suggestedAmount.toFixed(2)}
                       </span>
                       <p className="text-[10px] text-[var(--color-muted)] font-mono">
@@ -273,7 +273,7 @@ export function AIAnalysisReviewModal({
 
                   {/* Acceptance Criteria Checklist */}
                   <div className="pt-2 border-t border-[var(--color-rule-2)]">
-                    <p className="text-xs font-semibold text-[var(--color-muted)] mb-2">
+                    <p className="text-xs font-medium text-[var(--color-muted)] mb-2">
                       Measurable acceptance criteria
                     </p>
                     <div className="space-y-2">
@@ -349,7 +349,7 @@ export function AIAnalysisReviewModal({
                 className="text-[var(--color-accent)] shrink-0 mt-0.5"
               />
               <div>
-                <p className="font-semibold text-[var(--color-ink)]">
+                <p className="font-medium text-[var(--color-ink)]">
                   Sponsor verification & authorization required
                 </p>
                 <p className="text-[11px] text-[var(--color-muted)] mt-0.5">

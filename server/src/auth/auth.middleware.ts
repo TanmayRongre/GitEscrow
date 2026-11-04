@@ -75,6 +75,42 @@ export async function authenticate(
 }
 
 /**
+ * Middleware: Optionally verifies JWT access token from Authorization header or cookie.
+ * Populates req.user if valid token provided; does not reject unauthenticated requests.
+ */
+export async function optionalAuthenticate(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const authHeader = req.headers['authorization'];
+  let token: string | undefined;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim();
+  } else if (req.cookies?.access_token) {
+    token = req.cookies.access_token;
+  }
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    const payload = TokenService.verifyAccessToken(token);
+    const user = await User.findById(payload.sub);
+    if (user && user.accountStatus === 'ACTIVE') {
+      req.user = user;
+    }
+  } catch {
+    // If token invalid or expired, continue as unauthenticated guest
+  }
+
+  next();
+}
+
+/**
  * Middleware: Requires the authenticated user to hold one of the specified global roles.
  */
 export function requireGlobalRole(...allowedRoles: UserRole[]) {

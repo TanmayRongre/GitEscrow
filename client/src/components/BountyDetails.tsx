@@ -17,6 +17,8 @@ import {
   ArrowLeftIcon,
   ExternalLinkIcon,
   SparkleIcon,
+  AlertIcon,
+  RefreshIcon,
 } from "./Icons";
 import {
   animateTabTransition,
@@ -810,7 +812,48 @@ export function BountyDetails({
                 <p>No milestones attached to this bounty.</p>
               </div>
             ) : (
-              <div className="milestones-view-list">
+              <>
+                {/* Milestone Progression Summary Pipeline */}
+                <div className="milestone-progression-panel">
+                  <div className="progression-header">
+                    <span className="progression-title">Milestone Execution & Payout Pipeline</span>
+                    <span className="progression-count font-mono text-xs">
+                      {milestones.filter(m => m.status === 'APPROVED').length} of {milestones.length} Approved
+                    </span>
+                  </div>
+                  <div className="progression-rail">
+                    {milestones.map((m, idx) => {
+                      const isApproved = m.status === 'APPROVED';
+                      const isSubmitted = m.status === 'SUBMITTED' || m.status === 'UNDER_REVIEW';
+                      return (
+                        <div
+                          key={m._id || m.id || idx}
+                          className={`progression-step ${
+                            isApproved ? 'step-approved' : isSubmitted ? 'step-review' : 'step-pending'
+                          }`}
+                        >
+                          <div className="step-indicator">
+                            {isApproved ? (
+                              <CheckIcon width="12" height="12" />
+                            ) : isSubmitted ? (
+                              <SparkleIcon width="12" height="12" />
+                            ) : (
+                              <span className="font-mono text-xs">{m.order}</span>
+                            )}
+                          </div>
+                          <div className="step-info">
+                            <span className="step-name">{m.title}</span>
+                            <span className="step-amt font-mono text-xs">
+                              {formatReward(m.rewardAmount, m.currency)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="milestones-view-list">
                 {milestones.map((m) => {
                   const isApproved = m.status === "APPROVED";
                   const isSubmitted = ["SUBMITTED", "UNDER_REVIEW"].includes(
@@ -955,7 +998,7 @@ export function BountyDetails({
                                       ? "badge-cancelled"
                                       : "badge-progress"
                                   }`}
-                                  style={{ fontSize: "10px", fontWeight: 600 }}
+                                  style={{ fontSize: "10px", fontWeight: 500 }}
                                 >
                                   AI: {m.latestVerification.overallAssessment}
                                 </span>
@@ -1052,15 +1095,18 @@ export function BountyDetails({
                               <span
                                 className="status-badge badge-progress"
                                 title="PayPal payout batch is currently processing"
+                                style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}
                               >
-                                Payout processing
+                                <RefreshIcon className="spin-icon" width="10" height="10" />
+                                <span>Processing via PayPal</span>
                               </span>
                             )}
 
                             {m.payoutStatus === "AWAITING_PAYOUT_INFO" && (
                               <div style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-xs)" }}>
-                                <span className="status-badge" style={{ color: "var(--color-muted)" }}>
-                                  Awaiting PayPal email
+                                <span className="status-badge badge-draft" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}>
+                                  <AlertIcon width="10" height="10" />
+                                  <span>Awaiting PayPal email</span>
                                 </span>
                                 {isAssignedContributor && (
                                   <button
@@ -1080,8 +1126,9 @@ export function BountyDetails({
 
                             {m.payoutStatus === "FAILED" && (
                               <div style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-xs)" }}>
-                                <span className="status-badge badge-cancelled" title={m.payoutError?.message || "Payout failed"}>
-                                  Payout failed
+                                <span className="status-badge badge-cancelled" title={m.payoutError?.message || "Payout failed"} style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}>
+                                  <AlertIcon width="10" height="10" />
+                                  <span>Payout failed</span>
                                 </span>
                                 {(isCreator || currentUser?.role === "ADMIN") && (
                                   <button
@@ -1096,17 +1143,28 @@ export function BountyDetails({
                               </div>
                             )}
 
+                            {m.payoutStatus === "UNCERTAIN" && (
+                              <span className="status-badge badge-draft" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}>
+                                <InfoIcon width="10" height="10" />
+                                <span>Payout uncertain</span>
+                              </span>
+                            )}
+
                             {m.payoutStatus === "UNCLAIMED" && (
-                              <span className="status-badge badge-progress">
-                                Unclaimed in PayPal
+                              <span className="status-badge badge-progress" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}>
+                                <InfoIcon width="10" height="10" />
+                                <span>Unclaimed in PayPal</span>
                               </span>
                             )}
 
                             {(!m.payoutStatus || m.payoutStatus === "UNPAID") && (
-                              <span className="status-badge" style={{ color: "var(--color-muted)" }}>
-                                {bounty.fundingStatus === "FUNDED" || bounty.fundingStatus === "PARTIALLY_DISBURSED"
-                                  ? "Payout queued"
-                                  : "Awaiting bounty funding"}
+                              <span className="status-badge badge-draft" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2xs)" }}>
+                                <LockIcon width="10" height="10" />
+                                <span>
+                                  {bounty.fundingStatus === "FUNDED" || bounty.fundingStatus === "PARTIALLY_DISBURSED"
+                                    ? "Escrow funded (queued)"
+                                    : "Awaiting bounty funding"}
+                                </span>
                               </span>
                             )}
                           </div>
@@ -1181,6 +1239,7 @@ export function BountyDetails({
                   );
                 })}
               </div>
+              </>
             )}
           </div>
         )}

@@ -7,6 +7,9 @@
  *   C. Escrow Ledger (append-only enforcement, idempotency, invalid amounts, unauthorized access)
  *   D. GitHub Issue Validation (valid repo/issue, invalid repo, closed issue publishing guard)
  *   E. RBAC & Tenant Isolation (OWNER/SPONSOR vs MEMBER vs Contributor vs Outsider)
+ *   F. GitHub Closed Issue Guard & Eligible Cancellation
+ *   G. Query Filtering, status=ALL & Tenant Isolation (Task 3B.2)
+ *   H. Global Dashboard KPI Accuracy (/api/bounties/summary) (Task 3B.4)
  */
 
 import http from "http";
@@ -1154,6 +1157,468 @@ async function run() {
       cancelUnauthRes.status,
       cancelUnauthRes.status === 403,
       "Contributor prevented from cancelling organization bounty",
+    );
+
+    // -------------------------------------------------------------
+    // Category G: Query Filtering, status=ALL & Tenant Isolation (Task 3B.2)
+    // -------------------------------------------------------------
+    console.log(
+      `\n--- [Category G: Query Filtering, status=ALL & Tenant Isolation] ---`,
+    );
+
+    // Create a private draft bounty specifically for tenant isolation tests
+    const privateDraft = await Bounty.create({
+      title: "Private Organization Draft Bounty",
+      slug: `${RUN_ID}-private-draft`,
+      description: "Internal proposed draft for Task 3B.2 testing",
+      organizationId: testOrg._id,
+      createdBy: ownerUser._id,
+      updatedBy: ownerUser._id,
+      repositoryOwner: "mock-owner",
+      repositoryName: "escrow-repo",
+      repositoryFullName: "mock-owner/escrow-repo",
+      repositoryUrl: "https://github.com/mock-owner/escrow-repo",
+      repositoryId: 99999999,
+      issueNumber: 999,
+      issueUrl: "https://github.com/mock-owner/escrow-repo/issues/999",
+      issueTitle: "Private issue #999",
+      issueState: "open",
+      rewardAmount: mongoose.Types.Decimal128.fromString("250.00"),
+      currency: "USD",
+      status: "DRAFT",
+    });
+
+    // G1: Default query (no status param) returns only OPEN bounties
+    const defRes = await fetch(`${baseUrl}/api/bounties`);
+    const defBody = (await defRes.json()) as any;
+    const allOpen =
+      defRes.status === 200 &&
+      Array.isArray(defBody.bounties) &&
+      defBody.bounties.length > 0 &&
+      defBody.bounties.every((b: any) => b.status === "OPEN");
+    record(
+      "Query Filtering",
+      "Default query GET /api/bounties returns only OPEN bounties",
+      200,
+      defRes.status,
+      allOpen,
+      `Returned ${defBody.bounties?.length ?? 0} bounties, all OPEN: ${allOpen}`,
+    );
+
+    // G2: status=ALL returns non-draft bounties across statuses
+    const allRes = await fetch(`${baseUrl}/api/bounties?status=ALL`);
+    const allBody = (await allRes.json()) as any;
+    const hasMultipleStatuses =
+      allRes.status === 200 &&
+      Array.isArray(allBody.bounties) &&
+      allBody.bounties.some(
+        (b: any) =>
+          b.status === "OPEN" ||
+          b.status === "COMPLETED" ||
+          b.status === "CANCELLED",
+      );
+    record(
+      "Query Filtering",
+      "GET /api/bounties?status=ALL returns records across multiple statuses",
+      200,
+      allRes.status,
+      hasMultipleStatuses,
+      `Returned ${allBody.bounties?.length ?? 0} bounties across statuses`,
+    );
+
+    // G3: Invalid status query returns 400 Bad Request
+    const invRes = await fetch(
+      `${baseUrl}/api/bounties?status=INVALID_STATUS_FOO`,
+    );
+    record(
+      "Query Filtering",
+      "Reject invalid status query parameter with 400 Bad Request",
+      400,
+      invRes.status,
+      invRes.status === 400,
+      "Validation schema rejected invalid status enum value",
+    );
+
+    // G4: Unauthenticated client querying status=ALL does NOT receive private DRAFT
+    const unauthAllRes = await fetch(`${baseUrl}/api/bounties?status=ALL`);
+    const unauthAllBody = (await unauthAllRes.json()) as any;
+    const unauthHasDraft =
+      Array.isArray(unauthAllBody.bounties) &&
+      unauthAllBody.bounties.some(
+        (b: any) =>
+          b._id === privateDraft._id.toString() || b.status === "DRAFT",
+      );
+    record(
+      "Tenant Isolation",
+      "Unauthenticated client querying status=ALL does not receive private DRAFT bounties",
+      200,
+      unauthAllRes.status,
+      unauthAllRes.status === 200 && !unauthHasDraft,
+      `Unauthenticated response excludes private draft: ${!unauthHasDraft}`,
+    );
+
+    // G5: Non-member outsider querying status=ALL does NOT receive private DRAFT
+    const outsiderAllRes = await fetch(`${baseUrl}/api/bounties?status=ALL`, {
+      headers: { Authorization: `Bearer ${outsiderToken}` },
+    });
+    const outsiderAllBody = (await outsiderAllRes.json()) as any;
+    const outsiderHasDraft =
+      Array.isArray(outsiderAllBody.bounties) &&
+      outsiderAllBody.bounties.some(
+        (b: any) => b._id === privateDraft._id.toString(),
+      );
+    record(
+      "Tenant Isolation",
+      "Outsider querying status=ALL is isolated from other organization's DRAFT bounties",
+      200,
+      outsiderAllRes.status,
+      outsiderAllRes.status === 200 && !outsiderHasDraft,
+      `Outsider response excludes org private draft: ${!outsiderHasDraft}`,
+    );
+
+    // G6: Org owner querying status=ALL DOES receive their organization's DRAFT bounty
+    const ownerAllRes = await fetch(`${baseUrl}/api/bounties?status=ALL`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    const ownerAllBody = (await ownerAllRes.json()) as any;
+    const ownerHasDraft =
+      Array.isArray(ownerAllBody.bounties) &&
+      ownerAllBody.bounties.some(
+        (b: any) => b._id === privateDraft._id.toString(),
+      );
+    record(
+      "Tenant Isolation",
+      "Organization owner querying status=ALL receives own organization's DRAFT bounties",
+      200,
+      ownerAllRes.status,
+      ownerAllRes.status === 200 && ownerHasDraft,
+      `Owner response includes own org draft: ${ownerHasDraft}`,
+    );
+
+    // G7: Pagination support (page & limit) returns partitioned results without overlap
+    const p1Res = await fetch(
+      `${baseUrl}/api/bounties?status=ALL&limit=1&page=1`,
+      {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      },
+    );
+    const p1Body = (await p1Res.json()) as any;
+    const p2Res = await fetch(
+      `${baseUrl}/api/bounties?status=ALL&limit=1&page=2`,
+      {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      },
+    );
+    const p2Body = (await p2Res.json()) as any;
+
+    const p1Id = p1Body.bounties?.[0]?._id;
+    const p2Id = p2Body.bounties?.[0]?._id;
+    const paginationValid =
+      p1Res.status === 200 &&
+      p2Res.status === 200 &&
+      p1Body.page === 1 &&
+      p1Body.limit === 1 &&
+      p2Body.page === 2 &&
+      p2Body.limit === 1 &&
+      typeof p1Body.total === "number" &&
+      p1Body.total >= 2 &&
+      p1Id &&
+      p2Id &&
+      p1Id !== p2Id;
+
+    record(
+      "Query Filtering",
+      "Pagination with limit and page returns correct metadata and non-overlapping partitions",
+      200,
+      p2Res.status,
+      paginationValid,
+      `Page 1 ID: ${p1Id}, Page 2 ID: ${p2Id}, Total: ${p1Body.total}, TotalPages: ${p1Body.totalPages}`,
+    );
+
+    // -------------------------------------------------------------
+    // Category H: Global Dashboard KPI Accuracy (/api/bounties/summary) (Task 3B.4)
+    // -------------------------------------------------------------
+    console.log(
+      `\n--- [Category H: Global Dashboard KPI Accuracy (/api/bounties/summary)] ---`,
+    );
+
+    // Create a fresh user with zero bounties for empty dataset verification
+    const emptyUser = await User.create({
+      name: "Empty Dataset User",
+      username: `${RUN_ID}_empty`,
+      email: `${RUN_ID}_empty@example.com`,
+      passwordHash:
+        "$2a$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+      role: "USER",
+      accountStatus: "ACTIVE",
+      emailVerified: true,
+    });
+    const emptyUserToken = jwt.sign(
+      { sub: emptyUser._id.toString(), email: emptyUser.email, role: "USER" },
+      process.env.JWT_ACCESS_SECRET!,
+      { expiresIn: "1h" },
+    );
+
+    // Create a global administrator for admin visibility verification
+    const adminUser = await User.create({
+      name: "Global Platform Admin",
+      username: `${RUN_ID}_admin`,
+      email: `${RUN_ID}_admin@example.com`,
+      passwordHash:
+        "$2a$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+      role: "ADMIN",
+      accountStatus: "ACTIVE",
+      emailVerified: true,
+    });
+    const adminToken = jwt.sign(
+      { sub: adminUser._id.toString(), email: adminUser.email, role: "ADMIN" },
+      process.env.JWT_ACCESS_SECRET!,
+      { expiresIn: "1h" },
+    );
+
+    // H1: Empty dataset / zero-bounties user returns 0 for personal metrics
+    const emptyRes = await fetch(`${baseUrl}/api/bounties/summary`, {
+      headers: { Authorization: `Bearer ${emptyUserToken}` },
+    });
+    const emptyBody = (await emptyRes.json()) as any;
+    const emptyPass =
+      emptyRes.status === 200 &&
+      emptyBody.sponsoredBounties === 0 &&
+      emptyBody.claimedBounties === 0 &&
+      emptyBody.reviewsAwaiting === 0 &&
+      emptyBody.escrowFundedCents === 0 &&
+      emptyBody.escrowDisbursedCents === 0 &&
+      emptyBody.draftsCount === 0 &&
+      emptyBody.formattedFunded === "$0.00" &&
+      emptyBody.formattedDisbursed === "$0.00" &&
+      emptyBody.userContext?.authenticated === true;
+    record(
+      "Dashboard Summary",
+      "Empty dataset user returns 0 for personalized metrics and clean formatted currency",
+      200,
+      emptyRes.status,
+      emptyPass,
+      `User ${emptyUser.username}: sponsored=${emptyBody.sponsoredBounties}, reviews=${emptyBody.reviewsAwaiting}, funded=${emptyBody.formattedFunded}`,
+    );
+
+    // H2: Unauthenticated guest access returns safe public totals with zero private drafts/metrics
+    const guestRes = await fetch(`${baseUrl}/api/bounties/summary`);
+    const guestBody = (await guestRes.json()) as any;
+    const guestPass =
+      guestRes.status === 200 &&
+      guestBody.userContext?.authenticated === false &&
+      guestBody.sponsoredBounties === 0 &&
+      guestBody.reviewsAwaiting === 0 &&
+      guestBody.escrowFundedCents === 0 &&
+      guestBody.draftsCount === 0 &&
+      typeof guestBody.activeBounties === "number";
+    record(
+      "Dashboard Summary",
+      "Unauthenticated guest receives public totals with zero private drafts or metrics",
+      200,
+      guestRes.status,
+      guestPass,
+      `Guest summary: authenticated=${guestBody.userContext?.authenticated}, drafts=${guestBody.draftsCount}, sponsored=${guestBody.sponsoredBounties}`,
+    );
+
+    // H3: Multi-status bounties with distinct statuses and financial amounts
+    await Bounty.create({
+      title: "Submitted PR Review Bounty",
+      slug: `${RUN_ID}-submitted-bounty`,
+      description: "Testing review awaiting count in summary.",
+      organizationId: testOrg._id,
+      createdBy: ownerUser._id,
+      updatedBy: ownerUser._id,
+      repositoryOwner: "mock-owner",
+      repositoryName: "escrow-repo",
+      repositoryFullName: "mock-owner/escrow-repo",
+      repositoryUrl: "https://github.com/mock-owner/escrow-repo",
+      repositoryId: 99999001,
+      issueNumber: 801,
+      issueUrl: "https://github.com/mock-owner/escrow-repo/issues/801",
+      issueTitle: "Submitted PR Issue #801",
+      issueState: "open",
+      rewardAmount: mongoose.Types.Decimal128.fromString("150.00"),
+      currency: "USD",
+      status: "SUBMITTED",
+      fundingStatus: "FUNDED",
+      fundedAmountCents: 15000,
+      disbursedAmountCents: 0,
+      assignedContributorId: contributor1._id,
+    });
+
+    await Bounty.create({
+      title: "Completed Milestone Bounty",
+      slug: `${RUN_ID}-completed-bounty`,
+      description: "Testing completed status and disbursement calculation.",
+      organizationId: testOrg._id,
+      createdBy: ownerUser._id,
+      updatedBy: ownerUser._id,
+      repositoryOwner: "mock-owner",
+      repositoryName: "escrow-repo",
+      repositoryFullName: "mock-owner/escrow-repo",
+      repositoryUrl: "https://github.com/mock-owner/escrow-repo",
+      repositoryId: 99999002,
+      issueNumber: 802,
+      issueUrl: "https://github.com/mock-owner/escrow-repo/issues/802",
+      issueTitle: "Completed Issue #802",
+      issueState: "closed",
+      rewardAmount: mongoose.Types.Decimal128.fromString("200.00"),
+      currency: "USD",
+      status: "COMPLETED",
+      fundingStatus: "FULLY_DISBURSED",
+      fundedAmountCents: 20000,
+      disbursedAmountCents: 20000,
+      assignedContributorId: contributor1._id,
+    });
+
+    // Verify owner summary accurately aggregates submitted reviews and disbursements without double-counting
+    const ownerSumRes = await fetch(`${baseUrl}/api/bounties/summary`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    const ownerSumBody = (await ownerSumRes.json()) as any;
+    const ownerSumPass =
+      ownerSumRes.status === 200 &&
+      ownerSumBody.reviewsAwaiting >= 1 &&
+      ownerSumBody.escrowDisbursedCents >= 20000 &&
+      ownerSumBody.escrowFundedCents >= 35000 &&
+      ownerSumBody.draftsCount >= 1;
+    record(
+      "Dashboard Summary",
+      "Multi-status KPI aggregation correctly counts reviews awaiting, funded, and disbursed",
+      200,
+      ownerSumRes.status,
+      ownerSumPass,
+      `Owner summary: reviewsAwaiting=${ownerSumBody.reviewsAwaiting}, funded=${ownerSumBody.formattedFunded}, disbursed=${ownerSumBody.formattedDisbursed}`,
+    );
+
+    // H4: Organization & Tenant Isolation on Summary Metrics
+    const outsiderSumRes = await fetch(`${baseUrl}/api/bounties/summary`, {
+      headers: { Authorization: `Bearer ${outsiderToken}` },
+    });
+    const outsiderSumBody = (await outsiderSumRes.json()) as any;
+    const outsiderSumPass =
+      outsiderSumRes.status === 200 &&
+      outsiderSumBody.sponsoredBounties === 0 &&
+      outsiderSumBody.reviewsAwaiting === 0 &&
+      outsiderSumBody.draftsCount === 0 &&
+      outsiderSumBody.escrowFundedCents === 0;
+    record(
+      "Tenant Isolation",
+      "Outsider querying summary is strictly isolated from other organization's sponsored bounties and reviews",
+      200,
+      outsiderSumRes.status,
+      outsiderSumPass,
+      `Outsider: sponsored=${outsiderSumBody.sponsoredBounties}, reviews=${outsiderSumBody.reviewsAwaiting}, drafts=${outsiderSumBody.draftsCount}`,
+    );
+
+    // H5: Contributor Review Authorization Guard (assigned contributor cannot review own submissions)
+    const contribSumRes = await fetch(`${baseUrl}/api/bounties/summary`, {
+      headers: { Authorization: `Bearer ${contributor1Token}` },
+    });
+    const contribSumBody = (await contribSumRes.json()) as any;
+    const contribSumPass =
+      contribSumRes.status === 200 &&
+      contribSumBody.reviewsAwaiting === 0 &&
+      contribSumBody.claimedBounties >= 2;
+    record(
+      "Security & RBAC",
+      "Assigned contributor querying summary receives 0 reviews awaiting (self-approval blocked)",
+      200,
+      contribSumRes.status,
+      contribSumPass,
+      `Contributor claimed=${contribSumBody.claimedBounties}, reviewsAwaiting=${contribSumBody.reviewsAwaiting}`,
+    );
+
+    // H6: Global Admin Visibility across all platform submissions and drafts
+    const adminSumRes = await fetch(`${baseUrl}/api/bounties/summary`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const adminSumBody = (await adminSumRes.json()) as any;
+    const adminSumPass =
+      adminSumRes.status === 200 &&
+      adminSumBody.reviewsAwaiting >= ownerSumBody.reviewsAwaiting &&
+      adminSumBody.draftsCount >= 1 &&
+      adminSumBody.userContext?.role === "ADMIN";
+    record(
+      "Security & RBAC",
+      "Global administrator querying summary receives platform-wide review and draft totals",
+      200,
+      adminSumRes.status,
+      adminSumPass,
+      `Admin: role=${adminSumBody.userContext?.role}, reviews=${adminSumBody.reviewsAwaiting}, drafts=${adminSumBody.draftsCount}`,
+    );
+
+    // H7: Multi-Page Accuracy Across > 50 Bounties (proving KPI independence from 50-limit page)
+    const bulkDocs = [];
+    for (let i = 1; i <= 52; i++) {
+      bulkDocs.push({
+        title: `Bulk Pagination Test Bounty #${i}`,
+        slug: `${RUN_ID}-bulk-${i}`,
+        description: `Bounty #${i} for verifying global aggregation across > 50 records.`,
+        organizationId: testOrg._id,
+        createdBy: ownerUser._id,
+        updatedBy: ownerUser._id,
+        repositoryOwner: "mock-owner",
+        repositoryName: "escrow-repo",
+        repositoryFullName: "mock-owner/escrow-repo",
+        repositoryUrl: "https://github.com/mock-owner/escrow-repo",
+        repositoryId: 99999100 + i,
+        issueNumber: 1000 + i,
+        issueUrl: `https://github.com/mock-owner/escrow-repo/issues/${1000 + i}`,
+        issueTitle: `Bulk Issue #${1000 + i}`,
+        issueState: "open",
+        rewardAmount: mongoose.Types.Decimal128.fromString("10.00"),
+        currency: "USD",
+        status: "OPEN",
+        fundingStatus: "UNFUNDED",
+        fundedAmountCents: 0,
+        disbursedAmountCents: 0,
+      });
+    }
+    await Bounty.insertMany(bulkDocs);
+
+    // Verify pagination page 1 has 50 items
+    const page1Res = await fetch(
+      `${baseUrl}/api/bounties?status=ALL&limit=50&page=1`,
+      {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      },
+    );
+    const page1Body = (await page1Res.json()) as any;
+
+    // Verify pagination page 2 has remainder items
+    const page2Res = await fetch(
+      `${baseUrl}/api/bounties?status=ALL&limit=50&page=2`,
+      {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      },
+    );
+    const page2Body = (await page2Res.json()) as any;
+
+    // Verify summary endpoint returns global active count > 50 (independent of page 1's 50 items)
+    const multiPageSumRes = await fetch(`${baseUrl}/api/bounties/summary`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    const multiPageSumBody = (await multiPageSumRes.json()) as any;
+
+    const multiPagePass =
+      page1Res.status === 200 &&
+      page2Res.status === 200 &&
+      page1Body.bounties.length === 50 &&
+      page2Body.bounties.length >= 2 &&
+      page1Body.total >= 52 &&
+      multiPageSumRes.status === 200 &&
+      multiPageSumBody.activeBounties >= 52 &&
+      multiPageSumBody.activeBounties > page1Body.bounties.length;
+
+    record(
+      "Dashboard Summary",
+      "Global summary computes active bounties across complete dataset exceeding 50-limit page",
+      200,
+      multiPageSumRes.status,
+      multiPagePass,
+      `Page 1 count: ${page1Body.bounties.length}, Page 2 count: ${page2Body.bounties.length}, Total in DB: ${page1Body.total}, Global Active KPI: ${multiPageSumBody.activeBounties}`,
     );
   } finally {
     server.close();

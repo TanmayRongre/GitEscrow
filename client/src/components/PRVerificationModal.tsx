@@ -140,7 +140,7 @@ export function PRVerificationModal({
                 <span>AI Verification</span>
               </span>
               <span
-                className={`status-badge ${getAssessmentBadgeClass(verification.overallAssessment)} font-mono text-xs font-semibold`}
+                className={`status-badge ${getAssessmentBadgeClass(verification.overallAssessment)} font-mono text-xs font-medium`}
               >
                 {verification.overallAssessment}
               </span>
@@ -150,7 +150,7 @@ export function PRVerificationModal({
             </div>
             <h2
               id="pr-verification-title"
-              className="text-base font-semibold text-[var(--color-ink)] pt-1"
+              className="text-base font-medium text-[var(--color-ink)] pt-1"
             >
               Pull Request #{verification.pr.pullNumber}:{" "}
               {verification.pr.title}
@@ -188,7 +188,7 @@ export function PRVerificationModal({
         <div className="flex border-b border-[var(--color-rule)] bg-[var(--color-paper-3)] px-6">
           <button
             type="button"
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+            className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
               activeTab === "criteria"
                 ? "border-[var(--color-accent)] text-[var(--color-ink)]"
                 : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]"
@@ -199,7 +199,7 @@ export function PRVerificationModal({
           </button>
           <button
             type="button"
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+            className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
               activeTab === "evidence"
                 ? "border-[var(--color-accent)] text-[var(--color-ink)]"
                 : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]"
@@ -210,7 +210,7 @@ export function PRVerificationModal({
           </button>
           <button
             type="button"
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+            className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
               activeTab === "risks"
                 ? "border-[var(--color-accent)] text-[var(--color-ink)]"
                 : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]"
@@ -225,7 +225,7 @@ export function PRVerificationModal({
           {canDecide && (
             <button
               type="button"
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+              className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                 activeTab === "decision"
                   ? "border-[var(--color-accent)] text-[var(--color-ink)]"
                   : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]"
@@ -258,7 +258,7 @@ export function PRVerificationModal({
           {activeTab === "criteria" && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="field-label mb-0 text-xs font-semibold text-[var(--color-ink)]">
+                <span className="field-label mb-0 text-xs font-medium text-[var(--color-ink)]">
                   Individual criteria evaluations
                 </span>
                 <span className="text-xs text-[var(--color-muted)] font-mono">
@@ -279,15 +279,15 @@ export function PRVerificationModal({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-2 flex-1">
-                        <span className="font-mono text-xs font-semibold text-[var(--color-muted)] pt-0.5">
+                        <span className="font-mono text-xs font-medium text-[var(--color-muted)] pt-0.5">
                           {idx + 1}.
                         </span>
-                        <p className="font-semibold text-[var(--color-ink)] leading-snug">
+                        <p className="font-medium text-[var(--color-ink)] leading-snug">
                           {evalItem.criterion}
                         </p>
                       </div>
                       <span
-                        className={`status-badge ${getCriterionStatusBadge(evalItem.status)} font-mono text-xs font-semibold whitespace-nowrap`}
+                        className={`status-badge ${getCriterionStatusBadge(evalItem.status)} font-mono text-xs font-medium whitespace-nowrap`}
                       >
                         {evalItem.status}
                       </span>
@@ -295,7 +295,7 @@ export function PRVerificationModal({
 
                     <div className="pl-5 space-y-1 text-xs">
                       <p className="text-[var(--color-muted)] leading-relaxed">
-                        <span className="font-semibold text-[var(--color-ink-2)]">
+                        <span className="font-medium text-[var(--color-ink-2)]">
                           Evidence:
                         </span>{" "}
                         {evalItem.evidence}
@@ -328,7 +328,7 @@ export function PRVerificationModal({
             <div className="space-y-4">
               {/* Verified Facts */}
               <div className="p-3 bg-[var(--color-paper-3)] border border-[var(--color-rule)] rounded-[var(--radius-card)] space-y-2">
-                <span className="field-label mb-0 text-xs font-semibold text-[var(--color-ok)] flex items-center gap-1.5">
+                <span className="field-label mb-0 text-xs font-medium text-[var(--color-ok)] flex items-center gap-1.5">
                   <CheckIcon />
                   <span>Verified ground truth (GitHub evidence)</span>
                 </span>
@@ -343,7 +343,7 @@ export function PRVerificationModal({
 
               {/* AI Interpretations */}
               <div className="p-3 bg-[var(--color-paper-3)] border border-[var(--color-rule)] rounded-[var(--radius-card)] space-y-2">
-                <span className="field-label mb-0 text-xs font-semibold text-[var(--color-accent)] flex items-center gap-1.5">
+                <span className="field-label mb-0 text-xs font-medium text-[var(--color-accent)] flex items-center gap-1.5">
                   <SparkleIcon />
                   <span>AI interpretations & contextual matching</span>
                 </span>
@@ -358,7 +358,7 @@ export function PRVerificationModal({
               {verification.codeReferences &&
                 verification.codeReferences.length > 0 && (
                   <div className="p-3 bg-[var(--color-paper-3)] border border-[var(--color-rule)] rounded-[var(--radius-card)] space-y-2">
-                    <span className="field-label mb-0 text-xs font-semibold text-[var(--color-ink)]">
+                    <span className="field-label mb-0 text-xs font-medium text-[var(--color-ink)]">
                       Detected code references & modified modules
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -382,7 +382,7 @@ export function PRVerificationModal({
               {/* CI Status Summary */}
               <div className="p-3 bg-[var(--color-paper-3)] border border-[var(--color-rule)] rounded-[var(--radius-card)] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="field-label mb-0 text-xs font-semibold text-[var(--color-ink)]">
+                  <span className="field-label mb-0 text-xs font-medium text-[var(--color-ink)]">
                     Continuous integration & test runs
                   </span>
                   <span
@@ -392,7 +392,7 @@ export function PRVerificationModal({
                         : verification.ciStatusSummary.state === "FAILED"
                           ? "badge-cancelled"
                           : "badge-progress"
-                    } font-mono text-xs font-semibold`}
+                    } font-mono text-xs font-medium`}
                   >
                     {verification.ciStatusSummary.state}
                   </span>
@@ -421,7 +421,7 @@ export function PRVerificationModal({
               {/* Missing Requirements */}
               {verification.missingRequirements.length > 0 && (
                 <div className="p-3 bg-[var(--color-danger)]/5 border border-[var(--color-danger)]/20 rounded-[var(--radius-card)] space-y-1.5 text-xs">
-                  <span className="field-label mb-0 text-[11px] text-[var(--color-danger)] font-semibold">
+                  <span className="field-label mb-0 text-[11px] text-[var(--color-danger)] font-medium">
                     Missing specifications
                   </span>
                   <ul className="space-y-1 text-xs text-[var(--color-danger)] list-disc pl-4">
@@ -435,7 +435,7 @@ export function PRVerificationModal({
               {/* Potential Risks */}
               {verification.potentialRisks.length > 0 && (
                 <div className="p-3 bg-[var(--color-paper-3)] border border-[var(--color-rule)] rounded-[var(--radius-card)] space-y-1.5 text-xs">
-                  <span className="field-label mb-0 text-[11px] text-[var(--color-muted)] font-semibold">
+                  <span className="field-label mb-0 text-[11px] text-[var(--color-muted)] font-medium">
                     Potential risks & edge cases
                   </span>
                   <ul className="space-y-1 text-xs text-[var(--color-muted)] list-disc pl-4">
@@ -449,7 +449,7 @@ export function PRVerificationModal({
               {/* Suggested Changes */}
               {verification.suggestedChanges.length > 0 && (
                 <div className="p-3 bg-[var(--color-paper-3)] border border-[var(--color-rule)] rounded-[var(--radius-card)] space-y-1.5 text-xs">
-                  <span className="field-label mb-0 text-[11px] text-[var(--color-ink)] font-semibold">
+                  <span className="field-label mb-0 text-[11px] text-[var(--color-ink)] font-medium">
                     Actionable suggestions for contributor
                   </span>
                   <ul className="space-y-1 text-xs text-[var(--color-ink-2)] list-disc pl-4">

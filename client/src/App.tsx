@@ -8,20 +8,22 @@ import { UserProfile } from './components/UserProfile';
 import { BountyList } from './components/BountyList';
 import { BountyDetails } from './components/BountyDetails';
 import { CreateBountyForm } from './components/CreateBountyForm';
+import { LandingPage } from './components/LandingPage';
+import { DashboardView } from './components/DashboardView';
 import { animateViewTransition } from './motion/transitions';
 
-type ViewMode = 'marketplace' | 'details' | 'create' | 'profile' | 'auth';
+type ViewMode = 'landing' | 'dashboard' | 'marketplace' | 'details' | 'create' | 'profile' | 'auth';
 
 function AppContent() {
   const { user, isAuthenticated, loading, logout } = useAuth();
-  const [viewMode, setViewMode] = useState<ViewMode>('marketplace');
+  const [viewMode, setViewMode] = useState<ViewMode>('landing');
   const [selectedBountyId, setSelectedBountyId] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const mainContentRef = useRef<HTMLElement>(null);
 
   useGSAP(
     () => {
-      if (mainContentRef.current && !loading) {
+      if (mainContentRef.current && !loading && viewMode !== 'landing') {
         animateViewTransition(mainContentRef.current);
       }
     },
@@ -38,6 +40,41 @@ function AppContent() {
     setViewMode('details');
   };
 
+  if (viewMode === 'landing') {
+    return (
+      <LandingPage
+        onExploreBounties={() => {
+          setSelectedBountyId(null);
+          setViewMode('marketplace');
+        }}
+        onLaunchBounty={() => {
+          if (isAuthenticated) {
+            setViewMode('create');
+          } else {
+            setAuthMode('login');
+            setViewMode('auth');
+          }
+        }}
+        onSignIn={() => {
+          setAuthMode('login');
+          setViewMode('auth');
+        }}
+        onRegister={() => {
+          setAuthMode('register');
+          setViewMode('auth');
+        }}
+        onViewProfile={() => {
+          setSelectedBountyId(null);
+          setViewMode('dashboard');
+        }}
+        isAuthenticated={isAuthenticated}
+        currentUser={user}
+        loading={loading}
+        onSignOut={logout}
+      />
+    );
+  }
+
   return (
     <div className="app-root">
       <header className="app-header">
@@ -48,7 +85,7 @@ function AppContent() {
               className="logo-area"
               onClick={() => {
                 setSelectedBountyId(null);
-                setViewMode('marketplace');
+                setViewMode('landing');
               }}
             >
               <span className="logo-mark">GE</span>
@@ -105,6 +142,30 @@ function AppContent() {
           <nav className="header-nav" aria-label="Main navigation">
             <button
               type="button"
+              className="nav-link"
+              onClick={() => {
+                setSelectedBountyId(null);
+                setViewMode('landing');
+              }}
+            >
+              Home
+            </button>
+
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className={`nav-link ${viewMode === 'dashboard' ? 'nav-active' : ''}`}
+                onClick={() => {
+                  setSelectedBountyId(null);
+                  setViewMode('dashboard');
+                }}
+              >
+                Dashboard
+              </button>
+            ) : null}
+
+            <button
+              type="button"
               className={`nav-link ${viewMode === 'marketplace' || viewMode === 'details' ? 'nav-active' : ''}`}
               onClick={() => {
                 setSelectedBountyId(null);
@@ -141,6 +202,22 @@ function AppContent() {
           <div className="loading-state">
             <p>Loading application session…</p>
           </div>
+        ) : viewMode === 'dashboard' && user ? (
+          <ProtectedRoute>
+            <DashboardView
+              currentUser={user}
+              onSelectBounty={handleSelectBounty}
+              onCreateBounty={() => setViewMode('create')}
+              onExploreMarketplace={() => {
+                setSelectedBountyId(null);
+                setViewMode('marketplace');
+              }}
+              onOpenProfile={() => {
+                setSelectedBountyId(null);
+                setViewMode('profile');
+              }}
+            />
+          </ProtectedRoute>
         ) : viewMode === 'marketplace' ? (
           <BountyList
             onSelectBounty={handleSelectBounty}
@@ -160,14 +237,14 @@ function AppContent() {
             currentUser={user}
             onBack={() => {
               setSelectedBountyId(null);
-              setViewMode('marketplace');
+              setViewMode(isAuthenticated ? 'dashboard' : 'marketplace');
             }}
           />
         ) : viewMode === 'create' ? (
           <ProtectedRoute>
             <CreateBountyForm
               onBountyCreated={handleBountyCreated}
-              onCancel={() => setViewMode('marketplace')}
+              onCancel={() => setViewMode(isAuthenticated ? 'dashboard' : 'marketplace')}
             />
           </ProtectedRoute>
         ) : viewMode === 'profile' ? (
@@ -188,12 +265,12 @@ function AppContent() {
             {authMode === 'login' ? (
               <LoginForm
                 onSwitchToRegister={() => setAuthMode('register')}
-                onSuccess={() => setViewMode('marketplace')}
+                onSuccess={() => setViewMode('dashboard')}
               />
             ) : (
               <RegisterForm
                 onSwitchToLogin={() => setAuthMode('login')}
-                onSuccess={() => setViewMode('marketplace')}
+                onSuccess={() => setViewMode('dashboard')}
               />
             )}
           </div>

@@ -97,6 +97,8 @@ export interface IBounty {
   fundedAmount?: number;
   disbursedAmount?: number;
   reservedAmount?: number;
+  fundedAmountCents?: number;
+  disbursedAmountCents?: number;
   inboundCaptureId?: string;
   status: BountyStatus;
   statusHistory: IBountyStatusHistory[];
@@ -215,4 +217,27 @@ export interface IOrganization {
     role: "OWNER" | "SPONSOR" | "MEMBER";
     joinedAt: string;
   }>;
+}
+
+export interface DashboardMetrics {
+  activeBounties: number;
+  sponsoredBounties: number;
+  claimedBounties: number;
+  reviewsAwaiting: number;
+  escrowFundedCents: number;
+  escrowDisbursedCents: number;
+  totalBounties: number;
+  draftsCount: number;
+}
+
+export interface DashboardSummaryResponse extends DashboardMetrics {
+  formattedFunded: string;
+  formattedDisbursed: string;
+  userContext: {
+    authenticated: boolean;
+    userId?: string;
+    username?: string;
+    role?: string;
+  };
+  metrics?: DashboardMetrics;
 }
