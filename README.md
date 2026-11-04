@@ -8,7 +8,6 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%2F%2024-green)](https://nodejs.org/)
 [![Tests](https://img.shields.io/badge/Tests-171%20Passed-brightgreen)](server/scripts/)
 
-
 ---
 
 ## 1. Project Title & Tagline
@@ -19,14 +18,15 @@ GitEscrow establishes a mathematically verified, milestone-based bridge between 
 
 ---
 
-
 ## 2. Project Overview
 
 Open-source software powers modern digital infrastructure, yet funding open-source work remains notoriously difficult and risky for both sides:
+
 - **Sponsors** hesitate to fund bounties upfront because deliverables often fail to meet requirements, miss edge cases, or introduce security regressions.
 - **Contributors** avoid complex bounties because they fear uncompensated labor, moving goalposts, or maintainer ghosting after submitting substantial code.
 
 GitEscrow resolves this trust gap by implementing a structured, milestone-driven lifecycle:
+
 1. **Sponsor Funds Milestone Escrow**: Funds are captured into platform escrow via PayPal Orders v2 upon milestone setup.
 2. **AI Issue Decomposition**: Real GitHub issues are ingested and decomposed into structured summaries, discrete technical milestones, and measurable acceptance criteria with exact integer-cent reward distribution.
 3. **Contributor Claims & Builds**: Contributors claim bounties, view explicit criteria, and submit real GitHub Pull Requests.
@@ -75,28 +75,29 @@ GitEscrow re-engineers open-source funding into an audited, phased delivery pipe
 
 The repository includes genuine browser screenshots captured across Desktop (1440x900) and Mobile (390x844) viewports located in `artifacts/screens/`:
 
-| View | Desktop Screenshot | Mobile Screenshot | Description |
-| :--- | :--- | :--- | :--- |
-| **Public Marketplace** | `artifacts/screens/01-public-marketplace-desktop.png` | `artifacts/screens/01-public-marketplace-mobile.png` | Unauthenticated bounty grid with status filters, search, and demo badges |
-| **User Login** | `artifacts/screens/02-login-desktop.png` | `artifacts/screens/02-login-mobile.png` | Authentication form with credential fields and security notices |
-| **Registration** | `artifacts/screens/03-registration-desktop.png` | `artifacts/screens/03-registration-mobile.png` | Developer registration form with password requirements |
-| **Authenticated Marketplace** | `artifacts/screens/04-authenticated-marketplace-desktop.png` | `artifacts/screens/04-authenticated-marketplace-mobile.png` | Marketplace with active session badge, user profile link, and role pill |
-| **Bounty Details** | `artifacts/screens/05-bounty-details-desktop.png` | `artifacts/screens/05-bounty-details-mobile.png` | Bounty view with GitHub issue link, sponsor info, and tab navigation |
-| **Milestone Breakdown** | `artifacts/screens/06-milestones-desktop.png` | `artifacts/screens/06-milestones-mobile.png` | Sequential milestone breakdown with deliverables and completion states |
-| **Escrow Ledger** | `artifacts/screens/07-escrow-ledger-desktop.png` | `artifacts/screens/07-escrow-ledger-mobile.png` | Append-only financial audit trail with event types and idempotency keys |
-| **Create Bounty** | `artifacts/screens/08-create-bounty-desktop.png` | `artifacts/screens/08-create-bounty-mobile.png` | Interactive milestone builder with dynamic sum calculation and validation |
-| **User Profile & Payouts** | `artifacts/screens/09-user-profile-desktop.png` | `artifacts/screens/09-user-profile-mobile.png` | User credentials, RBAC permissions, and organization memberships |
-| **AI Analysis Review Modal** | `artifacts/screens/10-ai-analysis-modal-desktop.png` | `artifacts/screens/10-ai-analysis-modal-mobile.png` | AI decomposition review drawer with criteria checklist and allocation metrics |
-| **Bounty Form (AI Applied)** | `artifacts/screens/11-bounty-form-ai-applied-desktop.png` | `artifacts/screens/11-bounty-form-ai-applied-mobile.png` | Populated draft with applied AI milestones, criteria, and sponsor verification |
-| **Contributor Submit PR** | `artifacts/screens/12-contributor-submit-pr-modal-desktop.png` | `artifacts/screens/12-contributor-submit-pr-modal-mobile.png` | Contributor PR submission modal with live repository validation and criteria |
-| **AI PR Verification Modal** | `artifacts/screens/13-pr-verification-modal-desktop.png` | `artifacts/screens/13-pr-verification-modal-mobile.png` | Evidence-based AI verification audit report with criteria checks and CI runs |
-| **Milestone PR Applied View** | `artifacts/screens/14-milestone-pr-applied-desktop.png` | `artifacts/screens/14-milestone-pr-applied-mobile.png` | Milestone details card showing submitted PR metadata and audit history |
+| View                          | Desktop Screenshot                                             | Mobile Screenshot                                             | Description                                                                    |
+| :---------------------------- | :------------------------------------------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------------------- |
+| **Public Marketplace**        | `artifacts/screens/01-public-marketplace-desktop.png`          | `artifacts/screens/01-public-marketplace-mobile.png`          | Unauthenticated bounty grid with status filters, search, and demo badges       |
+| **User Login**                | `artifacts/screens/02-login-desktop.png`                       | `artifacts/screens/02-login-mobile.png`                       | Authentication form with credential fields and security notices                |
+| **Registration**              | `artifacts/screens/03-registration-desktop.png`                | `artifacts/screens/03-registration-mobile.png`                | Developer registration form with password requirements                         |
+| **Authenticated Marketplace** | `artifacts/screens/04-authenticated-marketplace-desktop.png`   | `artifacts/screens/04-authenticated-marketplace-mobile.png`   | Marketplace with active session badge, user profile link, and role pill        |
+| **Bounty Details**            | `artifacts/screens/05-bounty-details-desktop.png`              | `artifacts/screens/05-bounty-details-mobile.png`              | Bounty view with GitHub issue link, sponsor info, and tab navigation           |
+| **Milestone Breakdown**       | `artifacts/screens/06-milestones-desktop.png`                  | `artifacts/screens/06-milestones-mobile.png`                  | Sequential milestone breakdown with deliverables and completion states         |
+| **Escrow Ledger**             | `artifacts/screens/07-escrow-ledger-desktop.png`               | `artifacts/screens/07-escrow-ledger-mobile.png`               | Append-only financial audit trail with event types and idempotency keys        |
+| **Create Bounty**             | `artifacts/screens/08-create-bounty-desktop.png`               | `artifacts/screens/08-create-bounty-mobile.png`               | Interactive milestone builder with dynamic sum calculation and validation      |
+| **User Profile & Payouts**    | `artifacts/screens/09-user-profile-desktop.png`                | `artifacts/screens/09-user-profile-mobile.png`                | User credentials, RBAC permissions, and organization memberships               |
+| **AI Analysis Review Modal**  | `artifacts/screens/10-ai-analysis-modal-desktop.png`           | `artifacts/screens/10-ai-analysis-modal-mobile.png`           | AI decomposition review drawer with criteria checklist and allocation metrics  |
+| **Bounty Form (AI Applied)**  | `artifacts/screens/11-bounty-form-ai-applied-desktop.png`      | `artifacts/screens/11-bounty-form-ai-applied-mobile.png`      | Populated draft with applied AI milestones, criteria, and sponsor verification |
+| **Contributor Submit PR**     | `artifacts/screens/12-contributor-submit-pr-modal-desktop.png` | `artifacts/screens/12-contributor-submit-pr-modal-mobile.png` | Contributor PR submission modal with live repository validation and criteria   |
+| **AI PR Verification Modal**  | `artifacts/screens/13-pr-verification-modal-desktop.png`       | `artifacts/screens/13-pr-verification-modal-mobile.png`       | Evidence-based AI verification audit report with criteria checks and CI runs   |
+| **Milestone PR Applied View** | `artifacts/screens/14-milestone-pr-applied-desktop.png`        | `artifacts/screens/14-milestone-pr-applied-mobile.png`        | Milestone details card showing submitted PR metadata and audit history         |
 
 ---
 
 ## 7. Complete Technology Stack
 
 ### Frontend Application
+
 - **Framework**: React 19.3.1
 - **Build System**: Vite 8.3.5, TypeScript 5.7.3
 - **Styling**: Tailwind CSS v4, Hallmark centralized OKLCH design tokens (`tokens.css`, `base.css`)
@@ -105,6 +106,7 @@ The repository includes genuine browser screenshots captured across Desktop (144
 - **Linter**: Oxlint 1.89.0
 
 ### Backend API & Services
+
 - **Runtime**: Node.js v18+ (tested on Node v24)
 - **Framework**: Express 4.21.2, TypeScript 5.7.3
 - **Execution / Tooling**: TSX 4.19.2 (TypeScript Execute)
@@ -114,6 +116,7 @@ The repository includes genuine browser screenshots captured across Desktop (144
 - **Rate Limiting**: Express-rate-limit 8.7.2
 
 ### External APIs & Integrations
+
 - **Payment Processing**: PayPal REST APIs (v2 Orders, v2 Payments, v1 Payouts, Webhooks)
 - **Code & Telemetry**: GitHub REST API v3, GitHub Webhooks
 - **Artificial Intelligence**: Google Gemini 2.0 (`@google/genai`), OpenAI API, plus built-in AST Semantic Analyzer
@@ -175,16 +178,13 @@ graph TD
     GitHubService <--> GitHubAPI
     AIService <--> AIProviders
     PayPalService <--> PayPalAPI
-````
+```
 
 ---
 
-
 ## 9. Application Workflow
 
-
 The end-to-end lifecycle illustrates how sponsors create bounties, how contributors submit deliverables, how AI verifies criteria against real GitHub telemetry, and how human sponsors authorize milestone disbursements:
-
 
 ```mermaid
 sequenceDiagram
@@ -254,20 +254,16 @@ sequenceDiagram
 
 ---
 
-
 ## 10. PayPal Integration Details & Disclosures
 
 GitEscrow enforces strict financial truthfulness across all payment operations. All verification scripts interact with PayPal Sandbox endpoints and maintain idempotent state.
 
-
 ### Implemented PayPal Workflows
-
 
 1. **Sandbox Payment Capture (`Orders v2`)**:
    - Sponsors fund bounties using PayPal Checkout (`POST /v2/checkout/orders` with `intent: CAPTURE`).
    - The capture ID is verified against PayPal before the bounty transitions from `DRAFT` to `OPEN` (`FUNDED`).
    - Every capture ID is enforced as globally unique in the database to prevent replay or multi-bounty funding duplication.
-
 
 2. **Refund Workflow (`Payments v2`)**:
    - When a funded bounty is cancelled by an authorized sponsor without assigned deliverables, GitEscrow invokes `POST /v2/payments/captures/{capture_id}/refund`.
@@ -363,7 +359,6 @@ Ensure your system meets the following requirements:
 - **GitHub Personal Access Token**: Optional but recommended to avoid public rate limits: [https://github.com/settings/tokens](https://github.com/settings/tokens)
 - **Gemini or OpenAI API Key**: Optional for live LLM queries; the system runs cleanly offline using the built-in fallback analyzer if omitted.
 
-
 ## 15. Environment Configuration
 
 GitEscrow includes a canonical configuration template [.env.example](.env.example).
@@ -425,12 +420,18 @@ cd GitEscrow
 npm run install:all
 ```
 
-
 ---
 
 ## 17. Development Startup Commands
 
-Run the backend server and frontend client in separate terminal windows:
+Start both the backend API and frontend client concurrently with a single command:
+
+```bash
+# Start both Backend (Port 5000) and Frontend (Port 5173) concurrently
+npm run dev
+```
+
+Alternatively, run them in separate terminal windows:
 
 ```bash
 # Terminal 1: Start Backend API (Port 5000)
@@ -443,7 +444,6 @@ npm run dev:client
 Open your browser to `http://localhost:5173`.
 
 ---
-
 
 ## 18. Testing Instructions
 
@@ -488,23 +488,23 @@ npx tsx server/scripts/test-ai-analysis.ts
 
 To explore the application without setting up real PayPal or external developer accounts:
 
-1. **Start the application** via `npm run dev:server` and `npm run dev:client`.
-2. **Access the Public Website**: Navigate to `http://localhost:5173` to explore the Agiloft-inspired editorial landing page.
-3. **Register a Demo Sponsor**:
+1. **Start the application** via `npm run dev` (or in separate terminals via `npm run dev:server` and `npm run dev:client`).
+1. **Access the Public Website**: Navigate to `http://localhost:5173` to explore the Agiloft-inspired editorial landing page.
+1. **Register a Demo Sponsor**:
    - Click **Register** in the top navigation.
    - Enter username: `demo_sponsor`, email: `sponsor@example.com`, password: `Password123!`.
    - You are automatically authenticated and redirected to the **Authenticated Dashboard** (`/dashboard`).
-4. **Create a Bounty**:
+1. **Create a Bounty**:
    - Click **Create Bounty** in the navigation.
    - Enter Repository: `facebook/react`, Issue Number: `38090`.
    - Click **Analyze Issue with AI**. Review the structured summary and 3 generated milestones with integer-cent allocations.
    - Click **Apply to Bounty Form** and submit.
-5. **Register a Demo Contributor**:
+1. **Register a Demo Contributor**:
    - In a private/incognito window, register as `demo_contributor` (`contributor@example.com` / `Password123!`).
    - Navigate to **Profile**, enter your sandbox PayPal email (e.g. `sb-contributor@personal.example.com`), and save.
    - Browse the **Marketplace**, open the created bounty, and click **Claim Bounty**.
    - Submit a pull request URL (e.g. `https://github.com/facebook/react/pull/38090`) against Milestone #1.
-6. **Sponsor Review & Approval**:
+1. **Sponsor Review & Approval**:
    - Return to the sponsor session.
    - Open the bounty details, click **Review PR Deliverable**, inspect the AI criteria checklist, and click **Approve Milestone**.
    - Inspect the **Escrow Ledger** tab to observe the immutable audit trail and disbursement records.
