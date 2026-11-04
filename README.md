@@ -1,309 +1,533 @@
 # GitEscrow
 
-> Trustless, milestone-based escrow platform for open-source GitHub bounties powered by PayPal, developed for the **PayPal AI Hackathon 2026**.
+> Trustless, AI-powered GitHub contribution verification and milestone payment platform developed for the **PayPal AI Hackathon 2026**.
 
-GitEscrow establishes an audited, milestone-based escrow lifecycle connecting sponsors, maintainers, and open-source contributors:
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![React 19](https://img.shields.io/badge/React-19.3-61dafb)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%2F%2024-green)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/Tests-171%20Passed-brightgreen)](server/scripts/)
 
-- **Sponsor Funds Bounty**: Sponsor creates a bounty linked to a verified GitHub issue. Funding is handled via PayPal Orders v2 (captured for platform escrow or authorized for short milestone holds).
-- **AI-Powered Issue Analysis (Task 2B.2)**: Automatically deconstructs real GitHub issues into structured problem summaries, technical dependencies, logical phased milestones, and measurable acceptance criteria with integer-cent reward distribution.
-- **Contributor PR Submission & Evidence Verification (Task 2C)**: Contributors submit GitHub Pull Requests against milestones. GitEscrow collects verified PR evidence (diffs, commit history, branch pointers, CI check-runs) and evaluates deliverables against sponsor-approved acceptance criteria using a deterministic keyword & AST matching engine with multi-provider LLM support.
-- **Sponsor Review & Authority**: AI output is strictly consultative. Sponsors review, edit, and explicitly approve milestones before saving or publishing. AI never captures funds, executes payouts, or approves payments. Final milestone acceptance authority belongs exclusively to the human sponsor.
-- **Audited Milestones & Release**: Sponsors inspect deliverables against predefined criteria and approve milestones, recording immutable audit events in an append-only ledger.
-- **Identity & RBAC (Task 2A)**: Full authentication layer with JWT access tokens, rotating HttpOnly refresh cookies with token reuse family invalidation, global roles (`USER`, `ADMIN`), and organization roles (`OWNER`, `SPONSOR`, `MEMBER`).
-- **Bounties, Milestones & Escrow Ledger (Task 2B.1)**: Atomic state machine, fractional milestone breakdown with integer-cent accuracy, live GitHub issue validation, and an append-only financial audit ledger.
-- **Hallmark Modern-Minimal UI & GSAP Motion**: Polished developer-tool interface built with React 19, Tailwind CSS, Hallmark centralized OKLCH tokens (`tokens.css`), and GSAP lifecycle-safe transforms.
 
 ---
 
-## 1. Architecture & System Overview
+## 1. Project Title & Tagline
 
-```text
-GitEscrow (Monorepo)
-├── client/                           # Frontend (React 19, Vite, TypeScript, Tailwind CSS, GSAP)
-│   ├── src/
-│   │   ├── api/client.ts             # Credentialed API client with automatic session restoration
-│   │   ├── context/AuthContext.tsx   # React Auth context and hook (useAuth)
-│   │   ├── motion/
-│   │   │   ├── gsapSetup.ts          # Centralized GSAP plugin registration and motion tokens
-│   │   │   └── transitions.ts        # Lifecycle-safe animations and reduced-motion fallback
-│   │   ├── types/
-│   │   │   ├── bounty.ts             # TypeScript interfaces for Bounties, Milestones, Ledger
-│   │   │   ├── ai.ts                 # TypeScript interfaces for AI Issue Analysis & Proposals
-│   │   │   └── pr-verification.ts    # TypeScript interfaces for PR Evidence & AI Verification (Task 2C)
-│   │   ├── components/
-│   │   │   ├── BountyList.tsx        # Public marketplace view with status filter pills & search
-│   │   │   ├── BountyDetails.tsx     # Full bounty view with milestone timeline, tabs, and actions
-│   │   │   ├── CreateBountyForm.tsx  # Dynamic milestone builder with AI Assistant integration
-│   │   │   ├── AIAnalysisReviewModal.tsx # Hallmark-styled sponsor review & approval modal
-│   │   │   ├── MilestoneSubmitPRModal.tsx # Real-time repository-validated contributor submission modal
-│   │   │   ├── PRVerificationModal.tsx   # Evidence-based AI audit report & sponsor decision modal
-│   │   │   ├── LoginForm.tsx         # User authentication form
-│   │   │   ├── RegisterForm.tsx      # Developer registration form
-│   │   │   ├── UserProfile.tsx       # Profile management, RBAC verification, and org manager
-│   │   │   └── ProtectedRoute.tsx    # Role-gated route component
-│   │   ├── App.tsx                   # Main React component with responsive navigation
-│   │   ├── tokens.css                # Hallmark centralized OKLCH design tokens
-│   │   └── index.css                 # Hallmark Console modern-minimal design rules
-│   ├── package.json
-│   └── vite.config.ts
-├── server/                           # Backend API & Ledger (Node.js, Express, TypeScript, MongoDB)
-│   ├── src/
-│   │   ├── index.ts                  # Express entry point with CORS, cookie-parser, and routing
-│   │   ├── models/
-│   │   │   ├── User.ts               # User schema (roles: USER, ADMIN; bcrypt work factor 12)
-│   │   │   ├── Organization.ts       # Organization schema (roles: OWNER, SPONSOR, MEMBER)
-│   │   │   ├── RefreshToken.ts       # Rotating hashed refresh tokens with family tracking & TTL
-│   │   │   ├── WebhookDelivery.ts    # Webhook delivery deduplication schema
-│   │   │   ├── Bounty.ts             # Bounty schema (Decimal128 amounts, GitHub issue references)
-│   │   │   ├── Milestone.ts          # Milestone schema (criteria, order uniqueness, decision notes)
-│   │   │   └── EscrowLedger.ts       # Append-only financial event ledger with mutation guards
-│   │   ├── ai/                       # AI Analysis & Verification Subsystem (Tasks 2B.2 & 2C)
-│   │   │   ├── types.ts              # Zod schemas for issue analysis requests and proposals
-│   │   │   ├── pr-verification.types.ts # Zod schemas for PR evaluation, CI status, and audit reports
-│   │   │   ├── semantic-analyzer.ts  # Deterministic semantic deconstructor & cent distributor
-│   │   │   ├── deterministic-pr-verifier.ts # Deterministic criteria verification & diff auditor
-│   │   │   ├── client.ts             # LLM client (Gemini 2.0 / OpenAI) with prompt injection defense
-│   │   │   ├── ai.service.ts         # GitHub issue ingestion, caching, and amount scaling
-│   │   │   ├── pr-verification.service.ts # Contributor submission & sponsor review pipeline
-│   │   │   ├── ai.controller.ts      # REST controller for /api/ai/analyze-issue
-│   │   │   └── ai.routes.ts          # Rate-limited, authenticated AI routes
-│   │   ├── auth/
-│   │   │   ├── auth.service.ts       # Registration, login, token rotation, and admin bootstrap
-│   │   │   ├── auth.controller.ts    # Express controller with HttpOnly cookie handling
-│   │   │   ├── auth.middleware.ts    # authenticate, requireGlobalRole, requireOrganizationRole
-│   │   │   ├── auth.routes.ts        # Rate-limited auth endpoints
-│   │   │   ├── auth.validation.ts    # Zod input schemas
-│   │   │   ├── password.service.ts   # Bcryptjs hashing (12 work factor rounds)
-│   │   │   └── token.service.ts      # JWT sign/verify, refresh rotation & reuse detection
-│   │   ├── organizations/
-│   │   │   ├── organization.service.ts # Org CRUD, member addition, ownership transfer
-│   │   │   ├── organization.controller.ts
-│   │   │   └── organization.routes.ts
-│   │   ├── bounties/
-│   │   │   ├── bounty.service.ts     # Bounty lifecycle, GitHub validation, race-safe acceptance
-│   │   │   ├── milestone.service.ts  # Milestone CRUD, integer cent arithmetic, locked approval
-│   │   │   ├── ledger.service.ts     # Append-only event writer with idempotency guards
-│   │   │   ├── bounty-state.service.ts # State transition validation graph & actor permissions
-│   │   │   ├── bounty.controller.ts  # REST controllers for bounties, milestones, and ledger
-│   │   │   ├── bounty.routes.ts      # Express routes mounted on /api/bounties and /api/milestones
-│   │   │   └── bounty.validation.ts  # Zod validation schemas
-│   │   ├── paypal/
-│   │   │   ├── client.ts             # Typed PayPal REST API client (OAuth2, token cache)
-│   │   │   └── types.ts              # Orders v2, Payments v2, Payouts v1 types
-│   │   └── github/
-│   │       ├── client.ts             # Typed GitHub REST API client
-│   │       ├── types.ts              # GitHub entities
-│   │       ├── webhook.ts            # Timing-safe HMAC SHA-256 verifier
-│   │       └── webhook-router.ts     # Express router with raw-body signature validation
-│   ├── scripts/
-│   │   ├── test-pr-verification.ts   # 19-test automated suite for Contributor PR Submission & AI Verification (Task 2C)
-│   │   ├── test-ai-analysis.ts       # 17-test automated suite for AI Issue Analysis (Task 2B.2)
-│   │   ├── test-bounties.ts          # 34-test programmatic suite for Bounties, Milestones, Ledger
-│   │   ├── test-auth.ts              # 31-test automated suite for Auth, JWT, RBAC & Orgs
-│   │   ├── test-webhook-endpoint.ts  # Automated webhook signature & duplicate test suite
-│   │   ├── verify-sandbox.ts         # Resumable PayPal Sandbox capture/refund verification
-│   │   ├── verify-paypal-authorization.ts # PayPal Authorization & Void test suite
-│   │   ├── verify-github.ts          # GitHub REST API & CI check verification script
-│   │   ├── .verify-state.json        # Progress state for capture/refund (ignored by Git)
-│   │   └── .verify-auth-state.json   # Progress state for authorization/void (ignored by Git)
-│   ├── package.json
-│   └── tsconfig.json
-├── artifacts/screens/                # 28 captured browser screenshots across 14 desktop & mobile views
-├── .env.example                      # Canonical environment variable template
-├── .gitignore                        # Git ignore rules protecting credentials and state files
-├── LICENSE                           # MIT License
-├── package.json                      # Root monorepo script runner
-└── README.md
+**GitEscrow**: _Autonomous AI Contribution Verification with Human-Authorized Milestone Disbursements via PayPal._
+
+GitEscrow establishes a mathematically verified, milestone-based bridge between open-source project sponsors, maintainers, and external contributors. By combining deterministic AI issue decomposition, automated GitHub pull request telemetry analysis, and an append-only financial audit journal, GitEscrow eliminates contribution ambiguity while ensuring financial safety.
+
+---
+
+
+## 2. Project Overview
+
+Open-source software powers modern digital infrastructure, yet funding open-source work remains notoriously difficult and risky for both sides:
+- **Sponsors** hesitate to fund bounties upfront because deliverables often fail to meet requirements, miss edge cases, or introduce security regressions.
+- **Contributors** avoid complex bounties because they fear uncompensated labor, moving goalposts, or maintainer ghosting after submitting substantial code.
+
+GitEscrow resolves this trust gap by implementing a structured, milestone-driven lifecycle:
+1. **Sponsor Funds Milestone Escrow**: Funds are captured into platform escrow via PayPal Orders v2 upon milestone setup.
+2. **AI Issue Decomposition**: Real GitHub issues are ingested and decomposed into structured summaries, discrete technical milestones, and measurable acceptance criteria with exact integer-cent reward distribution.
+3. **Contributor Claims & Builds**: Contributors claim bounties, view explicit criteria, and submit real GitHub Pull Requests.
+4. **AI Evidence Verification**: GitEscrow queries live GitHub telemetry (diffs, commit history, and CI check-runs) and evaluates deliverables against sponsor criteria using a deterministic AST and semantic matching engine with multi-provider LLM support.
+5. **Human Sponsor Authority**: AI analysis is strictly consultative. Sponsors review evidence and explicitly sign off.
+6. **Milestone Disbursement**: Upon sponsor approval, the milestone is permanently locked and funds are disbursed to the contributor's verified PayPal address, recording an immutable audit event in the platform ledger.
+
+---
+
+## 3. Problem Statement
+
+1. **All-or-Nothing Bounties**: Traditional bounty platforms treat entire issues as monolithic tasks. If a contributor completes 80% of an architecture rewrite but stalls, they receive 0%, and the sponsor has zero deployable progress.
+2. **Ambiguous Requirements & Moving Goalposts**: Issue descriptions are often colloquial, lacking clear acceptance criteria, test specifications, and boundary rules.
+3. **Manual Review Fatigue**: Maintainers spend hours manually checking whether PRs fulfill original issue requirements, run tests, and adhere to architecture patterns.
+4. **Payment Risk & Lack of Auditability**: Maintainers and contributors have no shared, tamper-proof record of what criteria were agreed upon, what evidence was submitted, when approval occurred, and which transaction hash paid the contributor.
+
+---
+
+## 4. The Solution
+
+GitEscrow re-engineers open-source funding into an audited, phased delivery pipeline:
+
+- **Fractional Milestones with Integer-Cent Precision**: Issues are split into 2–4 sequential milestones (e.g. Scaffolding, Core Logic, Integration & Tests) with mathematically exact cent allocations (`distributeCents()`) avoiding rounding drift.
+- **Consultative AI Decomposition**: Large Language Models (Gemini 2.0 / OpenAI) generate actionable criteria from real GitHub issues, while built-in AST fallback analyzers ensure zero crash vulnerability.
+- **Objective Evidence Gathering**: PR branches, changed files, diffs, commits, and GitHub Actions CI checks are gathered directly from GitHub's REST API.
+- **Deterministic Evaluation with Human Sign-off**: Deliverables are audited against each criterion. The AI provides a structured PASS/FAIL advisory verdict, but only the authenticated sponsor has authority to trigger payouts.
+- **Append-Only Financial Ledger**: Every funding hold, milestone lock, sponsor approval, and payout event is immutably recorded with unique idempotency keys in MongoDB.
+
+---
+
+## 5. Key Features
+
+- **Public Editorial Landing Page**: Editorial, typography-led public experience featuring Teodor Serif and Anthropic Sans Display, live product showcases, and interactive technical workflows.
+- **Authenticated Developer-Fintech Dashboard**: Dark developer-tool interface (`#0D0D0D` graphite background, `#15191D` charcoal surfaces) displaying global KPI metrics across all authorized records.
+- **Global KPI Aggregation**: High-performance MongoDB aggregation pipeline (`GET /api/bounties/summary`) calculating platform-wide totals (Active Bounties, Sponsored Bounties, Awaiting Sign-off, Escrow Funded) across paginated boundaries.
+- **Multi-Role Authentication & RBAC**: JWT access tokens (15m) paired with HttpOnly rotating refresh cookies (7d), family reuse invalidation, global roles (`USER`, `ADMIN`), and organization roles (`OWNER`, `SPONSOR`, `MEMBER`).
+- **Real GitHub Telemetry Ingestion**: Direct integration with GitHub REST API and HMAC SHA-256 webhooks for real repository issues and pull requests (`facebook/react`).
+- **Multi-Provider AI Analysis**: Native support for Google Gemini 2.0 and OpenAI models, reinforced by an offline AST & Semantic Fallback Analyzer with prompt injection isolation.
+- **PayPal Sandbox Payment Pipeline**: End-to-end integration with PayPal Orders v2 (Capture), Payments v2 (Refunds), Authorizations (Void/Capture), and Payouts v1 (Disbursement).
+- **Contributor Payout Profile**: Secure PayPal recipient email validation and address presentation with strict tenant isolation.
+- **Hallmark Modern-Minimal Design**: Built according to Hallmark design principles with centralized OKLCH design tokens (`tokens.css`) and lifecycle-safe GSAP motion.
+
+---
+
+## 6. Screenshots
+
+The repository includes genuine browser screenshots captured across Desktop (1440x900) and Mobile (390x844) viewports located in `artifacts/screens/`:
+
+| View | Desktop Screenshot | Mobile Screenshot | Description |
+| :--- | :--- | :--- | :--- |
+| **Public Marketplace** | `artifacts/screens/01-public-marketplace-desktop.png` | `artifacts/screens/01-public-marketplace-mobile.png` | Unauthenticated bounty grid with status filters, search, and demo badges |
+| **User Login** | `artifacts/screens/02-login-desktop.png` | `artifacts/screens/02-login-mobile.png` | Authentication form with credential fields and security notices |
+| **Registration** | `artifacts/screens/03-registration-desktop.png` | `artifacts/screens/03-registration-mobile.png` | Developer registration form with password requirements |
+| **Authenticated Marketplace** | `artifacts/screens/04-authenticated-marketplace-desktop.png` | `artifacts/screens/04-authenticated-marketplace-mobile.png` | Marketplace with active session badge, user profile link, and role pill |
+| **Bounty Details** | `artifacts/screens/05-bounty-details-desktop.png` | `artifacts/screens/05-bounty-details-mobile.png` | Bounty view with GitHub issue link, sponsor info, and tab navigation |
+| **Milestone Breakdown** | `artifacts/screens/06-milestones-desktop.png` | `artifacts/screens/06-milestones-mobile.png` | Sequential milestone breakdown with deliverables and completion states |
+| **Escrow Ledger** | `artifacts/screens/07-escrow-ledger-desktop.png` | `artifacts/screens/07-escrow-ledger-mobile.png` | Append-only financial audit trail with event types and idempotency keys |
+| **Create Bounty** | `artifacts/screens/08-create-bounty-desktop.png` | `artifacts/screens/08-create-bounty-mobile.png` | Interactive milestone builder with dynamic sum calculation and validation |
+| **User Profile & Payouts** | `artifacts/screens/09-user-profile-desktop.png` | `artifacts/screens/09-user-profile-mobile.png` | User credentials, RBAC permissions, and organization memberships |
+| **AI Analysis Review Modal** | `artifacts/screens/10-ai-analysis-modal-desktop.png` | `artifacts/screens/10-ai-analysis-modal-mobile.png` | AI decomposition review drawer with criteria checklist and allocation metrics |
+| **Bounty Form (AI Applied)** | `artifacts/screens/11-bounty-form-ai-applied-desktop.png` | `artifacts/screens/11-bounty-form-ai-applied-mobile.png` | Populated draft with applied AI milestones, criteria, and sponsor verification |
+| **Contributor Submit PR** | `artifacts/screens/12-contributor-submit-pr-modal-desktop.png` | `artifacts/screens/12-contributor-submit-pr-modal-mobile.png` | Contributor PR submission modal with live repository validation and criteria |
+| **AI PR Verification Modal** | `artifacts/screens/13-pr-verification-modal-desktop.png` | `artifacts/screens/13-pr-verification-modal-mobile.png` | Evidence-based AI verification audit report with criteria checks and CI runs |
+| **Milestone PR Applied View** | `artifacts/screens/14-milestone-pr-applied-desktop.png` | `artifacts/screens/14-milestone-pr-applied-mobile.png` | Milestone details card showing submitted PR metadata and audit history |
+
+---
+
+## 7. Complete Technology Stack
+
+### Frontend Application
+- **Framework**: React 19.3.1
+- **Build System**: Vite 8.3.5, TypeScript 5.7.3
+- **Styling**: Tailwind CSS v4, Hallmark centralized OKLCH design tokens (`tokens.css`, `base.css`)
+- **Typography**: Teodor Serif (Display), Anthropic Sans Display (Headings & Body), Atkinson Hyperlegible Mono (Financial numbers & IDs)
+- **Animation**: GSAP 3.15, `@gsap/react` 2.1 (lifecycle-safe with reduced-motion support)
+- **Linter**: Oxlint 1.89.0
+
+### Backend API & Services
+- **Runtime**: Node.js v18+ (tested on Node v24)
+- **Framework**: Express 4.21.2, TypeScript 5.7.3
+- **Execution / Tooling**: TSX 4.19.2 (TypeScript Execute)
+- **Database**: MongoDB Atlas / Mongoose 8.9.5
+- **Security & Crypto**: Bcryptjs 3.0 (work factor 12), JsonWebToken 9.0, Timing-Safe HMAC SHA-256
+- **Validation**: Zod 4.6.7 (strict request and schema validation)
+- **Rate Limiting**: Express-rate-limit 8.7.2
+
+### External APIs & Integrations
+- **Payment Processing**: PayPal REST APIs (v2 Orders, v2 Payments, v1 Payouts, Webhooks)
+- **Code & Telemetry**: GitHub REST API v3, GitHub Webhooks
+- **Artificial Intelligence**: Google Gemini 2.0 (`@google/genai`), OpenAI API, plus built-in AST Semantic Analyzer
+
+---
+
+## 8. System Architecture
+
+The GitEscrow platform is organized as a layered monorepo with clean separation between presentation, routing, authentication, business domain services, and immutable persistence:
+
+```mermaid
+graph TD
+    subgraph ClientLayer["Frontend Client (React 19 + Vite)"]
+        Landing["Editorial Landing Page<br/>(Teodor & Anthropic Sans)"]
+        Dashboard["Developer Fintech Dashboard<br/>(Global KPI Cards & Filters)"]
+        Marketplace["Bounty Marketplace & Details"]
+        Modals["Review & Verification Modals<br/>(AI Review, PR Evidence, Payout)"]
+        ClientAPI["Credentialed API Client<br/>(Axios / Fetch + Cookie Storage)"]
+    end
+
+    subgraph ServerLayer["Backend API Gateway (Express 4 + TypeScript)"]
+        Router["Express App Router<br/>(CORS, Cookie Parser, Rate Limit)"]
+
+        subgraph SecurityLayer["Authentication & RBAC Layer"]
+            AuthMiddleware["auth.middleware.ts<br/>(authenticate, optionalAuthenticate)"]
+            RoleGuards["requireGlobalRole (ADMIN, USER)<br/>requireOrganizationRole (OWNER, SPONSOR, MEMBER)"]
+            TokenService["token.service.ts<br/>(JWT Access + Rotating Refresh Family)"]
+        end
+
+        subgraph CoreServices["Domain Services Layer"]
+            BountyService["bounty.service.ts<br/>(Lifecycle, Tenant Isolation, Global KPI Aggregation)"]
+            MilestoneService["milestone.service.ts<br/>(Integer Cent Breakdown, Lock Rules)"]
+            LedgerService["ledger.service.ts<br/>(Append-Only Financial Event Journal)"]
+            AIService["ai.service.ts & pr-verification.service.ts<br/>(Issue Analysis & PR Evaluator)"]
+            PayPalService["client.ts & webhook.service.ts<br/>(Orders v2, Authorizations, Payouts v1)"]
+            GitHubService["client.ts & webhook-router.ts<br/>(Issue / PR Telemetry, Timing-safe HMAC)"]
+        end
+    end
+
+    subgraph DataLayer["Persistence Layer (MongoDB Atlas / Mongoose)"]
+        DB_Users[("Users & Organizations")]
+        DB_Tokens[("Hashed Refresh Tokens")]
+        DB_Bounties[("Bounties (Decimal128)")]
+        DB_Milestones[("Milestones & Evidence")]
+        DB_Ledger[("EscrowLedger (Immutable Events)")]
+    end
+
+    subgraph ExternalIntegrations["External APIs & Ecosystem"]
+        GitHubAPI["GitHub REST API & Webhooks<br/>(Issues, PR Diffs, CI Checks)"]
+        AIProviders["AI Providers<br/>(Gemini 2.0 / OpenAI / Fallback Analyzer)"]
+        PayPalAPI["PayPal REST APIs<br/>(Orders v2 Capture, Refunds, Payouts)"]
+    end
+
+    ClientLayer --> Router
+    Router --> SecurityLayer
+    SecurityLayer --> CoreServices
+    CoreServices --> DataLayer
+
+    GitHubService <--> GitHubAPI
+    AIService <--> AIProviders
+    PayPalService <--> PayPalAPI
+````
+
+---
+
+
+## 9. Application Workflow
+
+
+The end-to-end lifecycle illustrates how sponsors create bounties, how contributors submit deliverables, how AI verifies criteria against real GitHub telemetry, and how human sponsors authorize milestone disbursements:
+
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Sponsor as Sponsor (Maintainer)
+    actor Contributor as Contributor (Developer)
+    participant Client as GitEscrow Frontend
+    participant Server as Express Backend & RBAC
+    participant AI as AI Engine (Gemini / Fallback)
+    participant GitHub as GitHub REST API
+    participant PayPal as PayPal Sandbox REST API
+    participant DB as MongoDB & EscrowLedger
+
+    %% Step 1: Bounty Creation & AI Decomposition
+    Note over Sponsor, Client: Phase 1: Creation & AI Milestone Breakdown
+    Sponsor->>Client: Input GitHub Issue (e.g. facebook/react#38090)
+    Client->>Server: POST /api/ai/analyze-issue
+    Server->>GitHub: Fetch Issue Details, Labels & Body
+    GitHub-->>Server: Real Issue Telemetry
+    Server->>AI: Analyze Issue & Suggest Phased Milestones
+    AI-->>Server: Structured Summary, Milestones & Integer Cents
+    Server-->>Client: Advisory AI Proposal
+    Sponsor->>Client: Review & Edit Milestones, Accept Allocation
+    Sponsor->>PayPal: Fund Escrow (Orders v2 Capture / Hold)
+    PayPal-->>Sponsor: Capture Confirmation (or hold)
+    Sponsor->>Client: Publish Bounty (DRAFT -> OPEN)
+    Client->>Server: POST /api/bounties (Status: OPEN, Funding: FUNDED)
+    Server->>DB: Persist Bounty & Milestones
+
+    %% Step 2: Marketplace Discovery & Assignment
+    Note over Contributor, Client: Phase 2: Claiming & In-Progress Development
+    Contributor->>Client: Browse Marketplace & View Bounty Details
+    Contributor->>Client: Claim Bounty (OPEN -> ASSIGNED)
+    Client->>Server: POST /api/bounties/:id/claim
+    Server->>DB: Atomic Update (Assign Contributor)
+    Contributor->>Client: Start Work (ASSIGNED -> IN_PROGRESS)
+    Client->>Server: PATCH /api/bounties/:id/start-work
+
+    %% Step 3: PR Submission & AI Evidence Verification
+    Note over Contributor, AI: Phase 3: Deliverable Submission & Evidence Audit
+    Contributor->>GitHub: Open PR in Repo with Fix
+    Contributor->>Client: Submit PR URL for Milestone #1
+    Client->>Server: POST /api/milestones/:id/submit-pr
+    Server->>GitHub: Fetch PR Diff, Commits, CI Check-Runs
+    GitHub-->>Server: Real PR Diffs & CI Status
+    Server->>AI: Evaluate Diff against Sponsor Acceptance Criteria
+    AI-->>Server: Audit Report (Criteria Match, CI Status, Recommendations)
+    Server->>DB: Update Milestone (Status: SUBMITTED, Attach Audit Report)
+    Server-->>Client: Submission & Evidence Stored
+
+    %% Step 4: Sponsor Sign-off & Milestone Payout
+    Note over Sponsor, PayPal: Phase 4: Sponsor Approval & Payout Execution
+    Sponsor->>Client: Inspect AI Audit Report & PR Telemetry
+    alt Changes Requested
+        Sponsor->>Client: Request Changes (SUBMITTED -> IN_PROGRESS)
+        Client->>Server: POST /api/milestones/:id/request-changes
+    else Approved by Sponsor
+        Sponsor->>Client: Sign-off & Approve (SUBMITTED -> APPROVED)
+        Client->>Server: POST /api/milestones/:id/approve
+        Server->>DB: Lock Milestone & Record Internal Ledger Event
+        Server->>PayPal: Execute Milestone Payout (POST /v1/payments/payouts)
+        PayPal-->>Server: Payout Batch Success (or Sandbox status)
+        Server->>DB: Record DISBURSEMENT Ledger Event (Idempotent)
+        Server-->>Client: Milestone Complete & Payout Released
+    end
 ```
 
 ---
 
-## 2. AI-Powered Issue Analysis & Milestone Criteria (Task 2B.2)
 
-### 2.1 Core Architectural Principles
-
-1. **Real GitHub Context**: Analysis ingests real issue titles, descriptions, labels, author information, and repository metadata (e.g. `facebook/react #38090` and `#38092`).
-2. **Deterministic Integer-Cent Precision**: All reward suggestions are mathematically distributed using `distributeCents()`, ensuring the sum of milestone allocations strictly matches the bounty total ($100.00, $250.00, $333.33) without rounding drift.
-3. **Resilient Fallback & Zero Crash Guarantee**: When LLM keys (`GEMINI_API_KEY` / `OPENAI_API_KEY`) are omitted or network APIs encounter timeouts, the system transparently utilizes the built-in `SemanticFallbackAnalyzer`, extracting code tokens, checklists, and error stack traces directly.
-4. **Prompt Injection Defense**: Untrusted issue bodies are isolated within explicit delimiters with system instructions strictly forbidding instruction overrides or security bypasses.
-5. **Human-in-the-Loop Authority**: AI proposals are strictly advisory. Applying suggestions populates draft fields for sponsor review. The sponsor retains total authority to edit criteria, add or delete milestones, or reject suggestions. AI never disburses funds, executes payouts, or approves milestone deliverables.
-
----
-
-## 3. PayPal Integration & Financial Integrity
+## 10. PayPal Integration Details & Disclosures
 
 GitEscrow enforces strict financial truthfulness across all payment operations. All verification scripts interact with PayPal Sandbox endpoints and maintain idempotent state.
 
-### 3.1 Verified PayPal Capabilities
 
-| Capability                       | PayPal API Endpoint                             | Verified State / Test Result                                      | Status   |
-| -------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- | -------- |
-| **OAuth2 Client Authentication** | `POST /v1/oauth2/token`                         | Bearer token retrieved (`length: 97`, valid ~3600s)               | **PASS** |
-| **Order Creation (Capture)**     | `POST /v2/checkout/orders`                      | Order `29W94452X2811371K` created ($100.00 USD)                   | **PASS** |
-| **Payment Capture**              | `POST /v2/checkout/orders/{id}/capture`         | Capture `1WC064007Y4652301` ($100.00 USD)                         | **PASS** |
-| **Partial Refund**               | `POST /v2/payments/captures/{id}/refund`        | Refund `40K256001X5322935` ($30.00 USD)                           | **PASS** |
-| **Remaining Balance Refund**     | `POST /v2/payments/captures/{id}/refund`        | Refund `4G764159WU686171M` ($70.00 USD)                           | **PASS** |
-| **Order Creation (Authorize)**   | `POST /v2/checkout/orders`                      | Orders created with `intent: AUTHORIZE` ($50.00 and $25.00)       | **PASS** |
-| **Authorization & Capture**      | `POST /v2/payments/authorizations/{id}/capture` | Auth `8K6263744E3078422` captured via Capture `58U5059383320752U` | **PASS** |
-| **Authorization Void**           | `POST /v2/payments/authorizations/{id}/void`    | Auth `0DF88378NN3582943` voided with status `VOIDED`              | **PASS** |
-| **Payouts API Scope & Auth**     | `GET /v1/payments/payouts/{id}`                 | Endpoint authenticated, OAuth scope recognized                    | **PASS** |
+### Implemented PayPal Workflows
 
-### 3.2 Payout Execution Limitation Notice
 
-> [!IMPORTANT]
-> **PayPal Sandbox Payouts Execution Status**:
-> While OAuth authorization and endpoint probing for the Payouts API succeed, automated payout execution against `POST /v1/payments/payouts` is subject to PayPal's sender account restriction:
+1. **Sandbox Payment Capture (`Orders v2`)**:
+   - Sponsors fund bounties using PayPal Checkout (`POST /v2/checkout/orders` with `intent: CAPTURE`).
+   - The capture ID is verified against PayPal before the bounty transitions from `DRAFT` to `OPEN` (`FUNDED`).
+   - Every capture ID is enforced as globally unique in the database to prevent replay or multi-bounty funding duplication.
+
+
+2. **Refund Workflow (`Payments v2`)**:
+   - When a funded bounty is cancelled by an authorized sponsor without assigned deliverables, GitEscrow invokes `POST /v2/payments/captures/{capture_id}/refund`.
+   - Supports both partial and full balance refunds.
+   - Payout-in-progress guards prevent cancellation while a milestone payout is in flight.
+
+> 4. **Supported Payout Workflow (`Payouts v1`)**:
+
+- Once a milestone is approved by the human sponsor, GitEscrow executes a payout batch (`POST /v1/payments/payouts`) targeting the contributor's registered PayPal email.
+- The disbursement record stores the payout batch ID, item ID, and fees.
+- Network timeout recovery handles ambiguous 5xx responses by setting status `UNCERTAIN` and reconciling authoritatively rather than issuing duplicate payouts.
+
+4. **Sponsor Approval & Milestone Lock**:
+   - Milestone approval locks the deliverable irreversibly.
+   - Duplicate approval attempts return HTTP 400 Bad Request to guarantee that payouts cannot be triggered more than once for a single milestone.
+
+5. **Internal Financial Ledger (`EscrowLedger`)**:
+   - Every transaction (HOLD, MILESTONE_APPROVAL, DISBURSEMENT, REFUND) writes an immutable, append-only document with a cryptographic idempotency key.
+   - Mutation guards prevent modifying or deleting ledger entries.
+
+### Mandatory Compliance & Sandbox Disclosures
+
+> [!WARNING]
+> **Regulatory Status & Financial Disclaimers**:
 >
-> ```json
-> {
->   "name": "USER_COUNTRY_NOT_SUPPORTED",
->   "message": "User country is not supported.",
->   "information_link": "https://developer.paypal.com/docs/api/payments.payouts-batch/#errors"
-> }
-> ```
->
-> In compliance with PayPal API terms and developer guidelines:
->
-> 1. GitEscrow **does not synthesize fake payout confirmations**.
-> 2. Payout execution remains **fully modular and guarded** (`--run-payout` flag in verification suites).
-> 3. Production deployments require a PayPal Business account in a country permitted for automated Payouts.
+> 1. **Not a Regulated Financial Escrow**: GitEscrow is a hackathon prototype demonstrating technical API integration and milestone orchestration. It is **not** a licensed financial institution, trust company, or legally regulated escrow entity under any federal, state, or international jurisdiction, and does not claim to hold deposits in a regulated escrow account.
+> 2. **Sandbox Payout Eligibility Notice**: The automated milestone payout capability was validated using a **US Business Sandbox account**. PayPal restricts automated Payouts API sender permissions in certain geographic jurisdictions (e.g. accounts registered in India receive `USER_COUNTRY_NOT_SUPPORTED`). Production payout availability is subject to PayPal's regional underwriting and commercial approval.
+> 3. **No Production Payment Claims**: GitEscrow is configured strictly for the PayPal Sandbox environment (`api-m.sandbox.paypal.com`). Do not submit live credentials or attempt real financial transfers with this repository.
 
 ---
 
-## 4. Hallmark UI Design & GSAP Motion
+## 11. AI Integration Details
 
-GitEscrow's frontend follows the **Hallmark** design authority, implementing a sleek, modern-minimal developer-tool aesthetic (`Console` theme):
+GitEscrow incorporates artificial intelligence to streamline issue breakdown and PR auditing while enforcing strict safety boundaries:
 
-- **Centralized OKLCH Tokens (`tokens.css`)**: High-contrast, accessibility-checked colors (`--color-paper`, `--color-ink`, `--color-accent`), spacing scales (`--space-1` through `--space-8`), and border rules (`--rule-hair`).
-- **Typography & Formatting**: Clean sans-serif headings with monospace tabular numbers for financial figures and transaction IDs (`var(--font-mono)`).
-- **GSAP Animation Engine**:
-  - React 19 lifecycle safety via `@gsap/react` `useGSAP()` hook with ref scoping.
-  - Transforms and opacity only (`y`, `autoAlpha`, `scale`); no reflow properties (`width`, `height`, `margin`, `padding`).
-  - Strict support for `prefers-reduced-motion` via `gsap.matchMedia()`, reverting animations to instantaneous transitions when requested.
-- **Code Quality**: Verified clean with Hallmark's sloplint auditor: **0 FAIL, 0 REFLEX, 0 WARN across 16 files**.
+1. **GitHub Issue Analysis**:
+   - The backend ingests real GitHub issue metadata (title, body, labels, author).
+   - The AI decomposes the issue into 2 to 3 chronological milestones with clear scopes (e.g. Scaffolding, Core Logic, Testing/Docs).
+   - Generates 2 to 4 measurable acceptance criteria per milestone.
+   - Distributes the bounty reward across milestones in integer cents (`distributeCents()`), guaranteeing mathematical equality to the total.
 
----
+2. **Pull Request Evidence Verification**:
+   - Contributor PR submissions trigger an evidence audit that retrieves the PR diff, commit list, changed files, and GitHub Actions CI check-runs.
+   - Deliverables are evaluated against each sponsor-defined acceptance criterion.
+   - The engine generates an audit report separating objective facts (files modified, test runs) from consultative assessments.
 
-## 5. Visual Artifacts (28 Browser Screenshots)
+3. **Prompt Injection Containment**:
+   - Untrusted issue and PR text are encapsulated within strict structural delimiters.
+   - System prompts explicitly instruct models to ignore embedded directives attempting to override evaluation logic or grant automatic approvals.
 
-The project includes 28 browser screenshots captured across 14 application views for both Desktop (1440x900) and Mobile (390x844), stored in `artifacts/screens/`:
-
-| View                               | Desktop Screenshot                           | Mobile Screenshot                           | Description                                                                                             |
-| ---------------------------------- | -------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Public Marketplace**             | `01-public-marketplace-desktop.png`          | `01-public-marketplace-mobile.png`          | Unauthenticated bounty grid with status filters, search, and demo badges                                |
-| **Login**                          | `02-login-desktop.png`                       | `02-login-mobile.png`                       | Authentication form with credential fields and security notices                                         |
-| **Registration**                   | `03-registration-desktop.png`                | `03-registration-mobile.png`                | Developer registration form with password requirements                                                  |
-| **Authenticated Marketplace**      | `04-authenticated-marketplace-desktop.png`   | `04-authenticated-marketplace-mobile.png`   | Marketplace with active session badge, user profile link, and role pill                                 |
-| **Bounty Details**                 | `05-bounty-details-desktop.png`              | `05-bounty-details-mobile.png`              | Bounty view with GitHub issue link, sponsor info, and tab navigation                                    |
-| **Milestones**                     | `06-milestones-desktop.png`                  | `06-milestones-mobile.png`                  | Sequential milestone breakdown with deliverables and completion states                                  |
-| **Escrow Ledger**                  | `07-escrow-ledger-desktop.png`               | `07-escrow-ledger-mobile.png`               | Append-only financial audit trail with event types and idempotency keys                                 |
-| **Create Bounty**                  | `08-create-bounty-desktop.png`               | `08-create-bounty-mobile.png`               | Interactive milestone builder with dynamic sum calculation and validation                               |
-| **User Profile**                   | `09-user-profile-desktop.png`                | `09-user-profile-mobile.png`                | User credentials, RBAC permissions, and organization memberships                                        |
-| **AI Analysis Review Modal**       | `10-ai-analysis-modal-desktop.png`           | `10-ai-analysis-modal-mobile.png`           | **Task 2B.2**: AI decomposition review drawer with criteria checklist and allocation metrics            |
-| **Bounty Form with AI Milestones** | `11-bounty-form-ai-applied-desktop.png`      | `11-bounty-form-ai-applied-mobile.png`      | **Task 2B.2**: Populated draft with applied AI milestones, criteria, and sponsor verification notice    |
-| **Contributor Submit PR Modal**    | `12-contributor-submit-pr-modal-desktop.png` | `12-contributor-submit-pr-modal-mobile.png` | **Task 2C**: Contributor PR submission modal with live repository validation and criteria checklist     |
-| **AI PR Verification Modal**       | `13-pr-verification-modal-desktop.png`       | `13-pr-verification-modal-mobile.png`       | **Task 2C**: Evidence-based AI verification audit report with criteria checks, CI runs & review actions |
-| **Milestone PR Applied View**      | `14-milestone-pr-applied-desktop.png`        | `14-milestone-pr-applied-mobile.png`        | **Task 2C**: Milestone details card showing submitted PR metadata, AI PASS badge, and audit history     |
+4. **Advisory Nature of AI**:
+   - **AI Never Disburses Funds**: AI models do not hold credentials, cannot make financial calls, and are isolated from the EscrowLedger database writer.
+   - **Sponsor retains 100% Final Authority**: AI recommendations are consultative. The human sponsor must review the evidence and explicitly sign off to transition a milestone to `APPROVED`.
 
 ---
 
-## 6. Installation & Quickstart
+## 12. GitHub Integration
 
-### Prerequisites
+GitEscrow interacts with GitHub via authenticated REST APIs and timing-safe webhooks:
 
-- **Node.js**: v18.0.0 or higher (tested on Node v24)
-- **npm**: v9.0.0 or higher
-- **MongoDB**: Local MongoDB instance or MongoDB Atlas cluster
-- **PayPal Developer Account**: [https://developer.paypal.com](https://developer.paypal.com)
-- **GitHub Personal Access Token**: [https://github.com/settings/tokens](https://github.com/settings/tokens)
+- **REST API Client**: Retrieves repository metadata, issues, comments, pull requests, unified diffs, and commit check-runs.
+- **Timing-Safe HMAC SHA-256 Webhooks**: Validates `X-Hub-Signature-256` signatures to prevent timing attacks and payload tampering.
+- **Duplicate Delivery Deduplication**: The `WebhookDelivery` collection stores `x-github-delivery` IDs to drop duplicate webhook events safely.
+- **Graceful Rate-Limit Fallback**: When unauthenticated GitHub API rate limits (60 req/hr) are reached, the application utilizes verified local snapshots for test issues (`facebook/react #38090`), ensuring tests pass reliably.
 
-### Installation
+---
 
-```bash
-# Clone the repository
-git clone https://github.com/your-org/gitescrow.git
-cd gitescrow
+## 13. Security and Authorization
 
-# Install all workspace dependencies
-npm run install:all
-```
+GitEscrow enforces defense-in-depth across every layer:
 
-### Environment Configuration
+- **Bcrypt Password Hashing**: Passwords are saved with bcrypt using work factor 12. Passwords shorter than 8 characters are rejected.
+- **JWT & HttpOnly Cookies**: Short-lived access tokens (15m) are sent via headers; refresh tokens (7d) are stored in HttpOnly, SameSite cookies.
+- **Refresh Token Rotation & Family Revocation**: Each refresh request rotates the token. If an expired or already-used refresh token is presented, the entire token family is immediately revoked, protecting against token theft.
+- **Anti-Enumeration Protections**: Login failure returns identical generic messages (`"Invalid email or password"`) regardless of whether the email or password was invalid.
+- **Role-Based Access Control (RBAC)**:
+  - Global roles: `USER`, `ADMIN`.
+  - Organization roles: `OWNER`, `SPONSOR`, `MEMBER`.
+- **Tenant Isolation**: Private and draft bounties belonging to an organization are completely hidden from outsiders and unauthenticated users.
+- **Self-Approval Guard**: Contributors cannot review or approve their own milestones.
+- **One-Time Admin Bootstrap**: An initial administrator can be established via `POST /api/auth/setup-admin` using `ADMIN_SETUP_SECRET`. Once an admin exists, the endpoint permanently locks.
 
-Copy [.env.example](.env.example) to `.env` and `server/.env`:
+---
+
+## 14. Installation Prerequisites
+
+Ensure your system meets the following requirements:
+
+- **Node.js**: `v18.0.0` or higher (tested on Node `v24.16.0`)
+- **npm**: `v9.0.0` or higher
+- **MongoDB**: Local MongoDB instance (`mongodb://localhost:27017`) or free MongoDB Atlas cluster
+- **PayPal Developer Account**: Sandbox account at [https://developer.paypal.com](https://developer.paypal.com)
+- **GitHub Personal Access Token**: Optional but recommended to avoid public rate limits: [https://github.com/settings/tokens](https://github.com/settings/tokens)
+- **Gemini or OpenAI API Key**: Optional for live LLM queries; the system runs cleanly offline using the built-in fallback analyzer if omitted.
+
+
+## 15. Environment Configuration
+
+GitEscrow includes a canonical configuration template [.env.example](.env.example).
+
+Copy the example file to `.env` in the project root and `server/.env`:
 
 ```bash
 cp .env.example .env
 cp .env.example server/.env
 ```
 
-Configure your environment variables:
+### Key Configuration Variables
 
 ```ini
-# PayPal Sandbox REST Credentials
-PAYPAL_CLIENT_ID=your_paypal_sandbox_client_id
-PAYPAL_CLIENT_SECRET=your_paypal_sandbox_client_secret
-PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
-PAYPAL_SANDBOX_CONTRIBUTOR_EMAIL=sb-contributor@personal.example.com
-
-# GitHub API & Webhooks
-GITHUB_TOKEN=ghp_your_personal_access_token
-GITHUB_WEBHOOK_SECRET=your_webhook_hmac_secret
-GITHUB_API_BASE_URL=https://api.github.com
-
-# Optional AI Provider Keys (Falls back to deterministic Semantic Analyzer if omitted)
-GEMINI_API_KEY=your_gemini_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here
-
-# Authentication & Security
-JWT_ACCESS_SECRET=your_32_byte_min_jwt_access_secret_key
-JWT_REFRESH_SECRET=your_32_byte_min_jwt_refresh_secret_key
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-ADMIN_SETUP_SECRET=your_one_time_admin_bootstrap_secret
-
-# MongoDB Atlas / Local Connection
-MONGODB_URI=mongodb://localhost:27017/gitescrow
-
 # Application Ports & URLs
 PORT=5000
 FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+
+# MongoDB Connection
+MONGODB_URI=mongodb://localhost:27017/gitescrow
+
+# JWT & Admin Security
+JWT_ACCESS_SECRET=your_jwt_access_secret_min_32_bytes_here
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_min_32_bytes_here
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+ADMIN_SETUP_SECRET=your_one_time_admin_bootstrap_secret_here
+
+# PayPal Sandbox Configuration
+PAYPAL_CLIENT_ID=your_paypal_sandbox_client_id_here
+PAYPAL_CLIENT_SECRET=your_paypal_sandbox_client_secret_here
+PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+PAYPAL_WEBHOOK_ID=your_paypal_sandbox_webhook_id_here
+PAYPAL_SANDBOX_CONTRIBUTOR_EMAIL=sb-contributor@personal.example.com
+
+# GitHub Configuration
+GITHUB_TOKEN=ghp_your_github_token_here
+GITHUB_WEBHOOK_SECRET=your_github_webhook_secret_here
+GITHUB_API_BASE_URL=https://api.github.com
+
+# AI Provider Configuration (Optional)
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-### Running the Services
+---
+
+## 16. Installation Instructions
+
+Clone the repository and install all dependencies:
 
 ```bash
-# Start backend API server (port 5000)
+# 1. Clone repository
+git clone https://github.com/TanmayRongre/GitEscrow.git
+cd GitEscrow
+
+# 2. Install dependencies across root, server, and client
+npm run install:all
+```
+
+
+---
+
+## 17. Development Startup Commands
+
+Run the backend server and frontend client in separate terminal windows:
+
+```bash
+# Terminal 1: Start Backend API (Port 5000)
 npm run dev:server
 
-# Start frontend client application (port 5173)
+# Terminal 2: Start Frontend Client (Port 5173)
 npm run dev:client
 ```
 
----
-
-## 7. Verification & Complete Test Matrix
-
-All **174 automated backend tests** and frontend validation suites run deterministically without errors:
-
-| Suite                     | Command                                                       | Tests                 | Scope & Coverage                                                                                                                                                                                                                                                                                                      | Status   |
-| ------------------------- | ------------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| **Financial Integrity & Payouts** | `npm run test:payouts`                                        | **40 / 40**           | **Task 2D & 2E.1**: Authoritative PayPal capture verification, cross-bounty unique capture constraints, atomic milestone locks, network timeout UNCERTAIN state, idempotency replay recovery, cancellation & refund pipeline, webhook deduplication, append-only ledger mutation guards | **PASS** |
-| **Task 2C.1 Audit**       | `npm run audit:2c1`                                           | **28 / 28**           | **Task 2C.1**: Complete 10-step contributor workflow with real GitHub issue & PR telemetry, financial integrity audit (zero funds transferred, 0 external debits, AI ledger write isolation, duplicate approval & idempotency rejection), security boundaries (self-approval, tenant isolation, repo mismatch guards), real GitHub matrix | **PASS** |
-| **PR Verification**       | `npm run test:pr-verification`                                | **19 / 19**           | **Task 2C**: URL parsing, repo mismatch guards, contributor auth checks, diff inspection, criteria evaluation, facts/interpretations separation, CI status handling, prompt injection containment, sponsor review & change requests, resubmission continuity, immutable escrow ledger approval, 0 financial mutations | **PASS** |
-| **AI Issue Analysis**     | `npm run test:ai`                                             | **17 / 17**           | **Task 2B.2**: Real issue ingestion (`#38090`, `#38092`), structured summary, Zod validation, integer-cent arithmetic, prompt injection defense, 401 auth guards, zero financial transactions                                                                                                                         | **PASS** |
-| **Bounties & Milestones** | `npm run test:bounties`                                       | **34 / 34**           | Bounty lifecycle, milestone ordering/sums, atomic race-free claims, locked milestone edits, append-only ledger guards, tenant isolation                                                                                                                                                                               | **PASS** |
-| **Auth & RBAC**           | `npm run test:auth`                                           | **31 / 31**           | User registration, login, anti-enumeration, token family reuse revocation, HttpOnly cookies, org RBAC, admin bootstrap locking                                                                                                                                                                                        | **PASS** |
-| **GitHub Webhooks**       | `npm run test:webhook`                                        | **5 / 5**             | Timing-safe HMAC SHA-256 signatures, tampered payload rejection, duplicate delivery ID idempotency                                                                                                                                                                                                                    | **PASS** |
-| **GitHub Integration**    | `npm run verify:github`                                       | **4 / 4**             | Live repo retrieval (`facebook/react`), issue listings, and single issue verification (`#38090`)                                                                                                                                                                                                                      | **PASS** |
-| **PayPal Sandbox**        | `npm run verify:sandbox`                                      | **10 / 10**           | OAuth authentication, order creation, capture, partial refund ($30.00), remaining refund ($70.00), Payouts endpoint probing, MongoDB ping                                                                                                                                                                             | **PASS** |
-| **PayPal Authorization**  | `npm run verify:paypal-auth`                                  | **4 / 4**             | Order authorization, authorization capture ($50.00), separate order authorization, authorization void ($25.00)                                                                                                                                                                                                        | **PASS** |
-| **Hallmark Sloplint**     | `node .agent/skills/hallmark/scripts/sloplint.mjs client/src` | **18 files**          | Enforces modern-minimal tokens, contrast ratios, and prevents generic UI slop (**0 FAIL, 0 REFLEX, 0 WARN**)                                                                                                                                                                                                          | **PASS** |
-| **Client Build**          | `npm run build:client`                                        | **TypeScript + Vite** | Production chunking, assets, CSS bundling (0 errors)                                                                                                                                                                                                                                                                  | **PASS** |
-| **Server Build**          | `npm run build:server`                                        | **TypeScript (tsc)**  | Strict typechecking across models, services, and controllers (0 errors)                                                                                                                                                                                                                                               | **PASS** |
+Open your browser to `http://localhost:5173`.
 
 ---
 
-## 8. License
+
+## 18. Testing Instructions
+
+All 171 automated backend tests run deterministically and clean up their test fixtures:
+
+```bash
+# 1. Authentication & RBAC Suite (31 tests)
+npm run test:auth
+
+# 2. Bounty Lifecycle, Milestones & Global KPI Metrics (48 tests)
+npm run test:bounties
+
+# 3. Financial Integrity & Payouts Suite (40 tests)
+npm run test:payouts
+
+# 4. PR Verification & Evidence Evaluation (19 tests)
+npm run test:pr-verification
+
+# 5. Timing-Safe GitHub Webhooks (5 tests)
+npm run test:webhook
+
+# 6. End-to-End 10-Step Contributor Workflow Audit (28 tests)
+npm run audit:2c1
+```
+
+### Full Verification & Build Verification
+
+```bash
+# Build server TypeScript (tsc)
+npm run build:server
+
+# Build client production bundle (Vite)
+npm run build:client
+
+# Verify AI issue analysis & cent allocation (17 tests)
+npx tsx server/scripts/test-ai-analysis.ts
+```
+
+---
+
+## 19. Demo Account Instructions (Judge Guide)
+
+To explore the application without setting up real PayPal or external developer accounts:
+
+1. **Start the application** via `npm run dev:server` and `npm run dev:client`.
+2. **Access the Public Website**: Navigate to `http://localhost:5173` to explore the Agiloft-inspired editorial landing page.
+3. **Register a Demo Sponsor**:
+   - Click **Register** in the top navigation.
+   - Enter username: `demo_sponsor`, email: `sponsor@example.com`, password: `Password123!`.
+   - You are automatically authenticated and redirected to the **Authenticated Dashboard** (`/dashboard`).
+4. **Create a Bounty**:
+   - Click **Create Bounty** in the navigation.
+   - Enter Repository: `facebook/react`, Issue Number: `38090`.
+   - Click **Analyze Issue with AI**. Review the structured summary and 3 generated milestones with integer-cent allocations.
+   - Click **Apply to Bounty Form** and submit.
+5. **Register a Demo Contributor**:
+   - In a private/incognito window, register as `demo_contributor` (`contributor@example.com` / `Password123!`).
+   - Navigate to **Profile**, enter your sandbox PayPal email (e.g. `sb-contributor@personal.example.com`), and save.
+   - Browse the **Marketplace**, open the created bounty, and click **Claim Bounty**.
+   - Submit a pull request URL (e.g. `https://github.com/facebook/react/pull/38090`) against Milestone #1.
+6. **Sponsor Review & Approval**:
+   - Return to the sponsor session.
+   - Open the bounty details, click **Review PR Deliverable**, inspect the AI criteria checklist, and click **Approve Milestone**.
+   - Inspect the **Escrow Ledger** tab to observe the immutable audit trail and disbursement records.
+
+---
+
+## 20. Known Limitations
+
+- **PayPal Regional Payout Restrictions**: As documented in Section 10, automated payout disbursements via `POST /v1/payments/payouts` require a PayPal Business account in an eligible country (such as the US). Accounts in India encounter `USER_COUNTRY_NOT_SUPPORTED`.
+- **Public GitHub API Rate Limits**: GitHub limits unauthenticated requests to 60 per hour per IP. For uninterrupted local testing of arbitrary repositories, provide a `GITHUB_TOKEN`.
+- **Sandbox Environment Only**: GitEscrow is strictly a prototype built for the PayPal AI Hackathon 2026. It is not licensed as a commercial escrow service.
+
+---
+
+## 21. Future Improvements
+
+- **Multi-Token & Multi-Currency Escrow**: Expanding beyond USD to support EUR, GBP, and cryptocurrency token rails.
+- **GitHub Actions Bot Integration**: Deploying a native GitHub App bot (`@gitescrow-bot`) that comments milestone status and verification results directly on pull requests.
+- **Decentralized Multi-Sig Holds**: Allowing dual-sponsor multi-signature approvals for high-value enterprise bounties ($10,000+).
+- **Automated Regression Suite Runner**: Running project test suites in ephemeral cloud containers before approving milestone PRs.
+
+---
+
+## 22. License
 
 This project is licensed under the [MIT License](LICENSE).
