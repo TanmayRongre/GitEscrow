@@ -62,30 +62,19 @@ export function HeroEvidenceCard() {
       }}
     >
       {/* Top Meta Bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "var(--space-12)",
-          padding: "var(--space-16) var(--space-20)",
-          borderBottom: "1px solid var(--border-dark)",
-          backgroundColor: "rgba(255, 255, 255, 0.02)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-12)" }}>
+      <div className="hero-card-header">
+        <div className="hero-card-header-left">
           <span
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "12px",
-              padding: "3px 8px",
+              fontFamily: "var(--font-body)",
+              fontSize: "11px",
+              padding: "2px 8px",
               borderRadius: "var(--radius-control)",
               backgroundColor: "rgba(255, 255, 255, 0.08)",
               color: "#F4F5F6",
               border: "1px solid rgba(255, 255, 255, 0.2)",
-              fontWeight: 500,
-              letterSpacing: "0.02em",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
             }}
           >
             Sample Deliverable
@@ -93,36 +82,39 @@ export function HeroEvidenceCard() {
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: "14px",
+              fontSize: "13px",
               color: "var(--text-dark-primary)",
               fontWeight: 500,
+              whiteSpace: "nowrap",
             }}
           >
             acme/sample-app#12
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-12)" }}>
+        <div className="hero-card-header-right">
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: "14px",
+              fontSize: "13px",
               color: "var(--amber)",
               fontWeight: 600,
+              whiteSpace: "nowrap",
             }}
           >
             $250.00 USD
           </span>
           <span
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "12px",
-              padding: "3px 8px",
+              fontFamily: "var(--font-body)",
+              fontSize: "11px",
+              padding: "2px 8px",
               borderRadius: "var(--radius-control)",
               backgroundColor: "rgba(34, 197, 94, 0.12)",
               color: "var(--green)",
               border: "1px solid rgba(34, 197, 94, 0.25)",
-              fontWeight: 500,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
             }}
           >
             Funded via PayPal
@@ -178,7 +170,7 @@ export function HeroEvidenceCard() {
       </div>
 
       {/* Tab Panels */}
-      <div ref={panelRef} className="responsive-card-md">
+      <div ref={panelRef} className="hero-card-body">
         {/* Tab 1: Issue */}
         {activeTab === "issue" && (
           <div
@@ -187,7 +179,7 @@ export function HeroEvidenceCard() {
             aria-labelledby="tab-issue"
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "var(--space-8)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
               <h3
                 style={{
                   fontFamily: "var(--font-body)",
@@ -195,11 +187,19 @@ export function HeroEvidenceCard() {
                   fontWeight: 600,
                   color: "var(--text-dark-primary)",
                   margin: 0,
+                  lineHeight: 1.35,
                 }}
               >
                 Add stream timeout handling to client connections
               </h3>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#D1D5DB" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "12px",
+                  color: "#94A3B8",
+                  letterSpacing: "0.01em",
+                }}
+              >
                 Milestone 1 of 2 · Target v2.4
               </span>
             </div>
@@ -217,7 +217,7 @@ export function HeroEvidenceCard() {
             </p>
             <div
               style={{
-                padding: "var(--space-12)",
+                padding: "var(--space-12) var(--space-14)",
                 backgroundColor: "rgba(255, 255, 255, 0.03)",
                 border: "1px solid var(--border-dark)",
                 borderRadius: "var(--radius-control)",
@@ -242,7 +242,7 @@ export function HeroEvidenceCard() {
                 ].map((crit, cIdx) => (
                   <div key={cIdx} style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-8)" }}>
                     <CheckCircle2 size={15} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-dark-secondary)", lineHeight: 1.4 }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-dark-secondary)", lineHeight: 1.45 }}>
                       {crit}
                     </span>
                   </div>
