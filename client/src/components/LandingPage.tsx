@@ -1,17 +1,13 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, prefersReducedMotion } from "../motion/gsapSetup";
-import { MOTION_DUR, MOTION_EASE, MOTION_DIST } from "../motion/motionTokens";
 import { LandingNav } from "./landing/LandingNav";
-import { HeroSection } from "./landing/HeroSection";
-import { ProblemSection } from "./landing/ProblemSection";
-import { ProductShowcaseSection } from "./landing/ProductShowcaseSection";
-import { HowItWorksSection } from "./landing/HowItWorksSection";
-import { FeaturesSection } from "./landing/FeaturesSection";
-import { AIVerificationSection } from "./landing/AIVerificationSection";
-import { AudienceSection } from "./landing/AudienceSection";
-import { FinalCTASection } from "./landing/FinalCTASection";
-import { LandingFooter } from "./landing/LandingFooter";
+import { HeroSection } from "./home/HeroSection";
+import { ProblemSection } from "./home/ProblemSection";
+import { HowItWorksSection } from "./home/HowItWorksSection";
+import { EvidenceShowcaseSection } from "./home/EvidenceShowcaseSection";
+import { AudiencesSection } from "./home/AudiencesSection";
+import { FinalCtaFooterSection } from "./home/FinalCtaFooterSection";
 
 interface LandingPageProps {
   onExploreBounties: () => void;
@@ -25,6 +21,17 @@ interface LandingPageProps {
   onSignOut?: () => void;
 }
 
+/**
+ * GitEscrow Home Page
+ * Rebuilt from scratch per Hallmark & Unslop specifications.
+ * Sections:
+ * 1. Hero (Dark - --ink)
+ * 2. Problem (Cream - --cream)
+ * 3. How It Works (Cream-Sunk - --cream-sunk)
+ * 4. Evidence Before Approval (Dark - --ink)
+ * 5. For Developers / For Sponsors (Cream - --cream)
+ * 6. Final CTA + Footer (Dark - --ink)
+ */
 export function LandingPage({
   onExploreBounties,
   onLaunchBounty,
@@ -36,37 +43,80 @@ export function LandingPage({
   loading = false,
   onSignOut,
 }: LandingPageProps) {
-  const landingRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
+  // Hero subtle entrance: runs immediately on mount, completes in < 500ms
   useGSAP(
     () => {
-      if (prefersReducedMotion()) return;
+      if (prefersReducedMotion() || !mainRef.current) return;
 
-      // Subtle hero entrance cascade: transforms and opacity only
-      gsap.from(".hero-enter", {
-        y: MOTION_DIST.entranceY,
-        opacity: 0,
-        duration: MOTION_DUR.med,
-        stagger: MOTION_DUR.stagger * 2,
-        ease: MOTION_EASE.enter,
-        clearProps: "transform,opacity",
+      gsap.from(".hero-left-col > *", {
+        autoAlpha: 0,
+        y: 12,
+        duration: 0.35,
+        stagger: 0.07,
+        ease: "power2.out",
+        clearProps: "transform,opacity,visibility",
       });
 
-      gsap.from(".hero-preview-enter", {
-        y: MOTION_DIST.entranceY * 1.5,
-        opacity: 0,
-        duration: MOTION_DUR.long,
-        delay: 0.1,
-        ease: MOTION_EASE.enter,
-        clearProps: "transform,opacity",
+      gsap.from(".hero-right-col", {
+        autoAlpha: 0,
+        y: 16,
+        duration: 0.42,
+        delay: 0.08,
+        ease: "power2.out",
+        clearProps: "transform,opacity,visibility",
       });
     },
-    { scope: landingRef },
+    { scope: mainRef },
   );
 
+  // Subsequent sections: lightweight scroll reveal using compositor transforms only
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+
+    const sections = document.querySelectorAll<HTMLElement>(".home-section-reveal");
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            gsap.fromTo(
+              entry.target,
+              { autoAlpha: 0, y: 16 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.38,
+                ease: "power2.out",
+                clearProps: "transform,opacity,visibility",
+              },
+            );
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08 },
+    );
+
+    sections.forEach((sec) => observer.observe(sec));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div ref={landingRef} className="landing-page-root">
-      {/* Navigation */}
+    <div
+      className="landing-page-root"
+      style={{
+        backgroundColor: "var(--ink)",
+        color: "var(--text-dark-primary)",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflowX: "clip",
+      }}
+    >
+      {/* Sticky Navigation: solid background, outside section hierarchy */}
       <LandingNav
         onExploreBounties={onExploreBounties}
         onSignIn={onSignIn}
@@ -78,47 +128,35 @@ export function LandingPage({
         onSignOut={onSignOut}
       />
 
-      {/* Main Sections — Alternating Black & Warm Cream Rhythm */}
-      <main className="landing-main-content">
-        {/* 1. Hero — Black */}
+      {/* Main Sections */}
+      <main ref={mainRef} className="landing-main-content" style={{ flex: "1 0 auto" }}>
+        {/* Section 1: Hero (Dark - --ink) */}
         <HeroSection
           onExploreBounties={onExploreBounties}
           onLaunchBounty={onLaunchBounty}
         />
 
-        {/* 2. Problem / Value Proposition — Warm Cream */}
+        {/* Section 2: The Problem (Cream - --cream) */}
         <ProblemSection />
 
-        {/* 3. Product Showcase — Dark */}
-        <ProductShowcaseSection onExploreBounties={onExploreBounties} />
-
-        {/* 4. How It Works — Warm Cream */}
+        {/* Section 3: How It Works (Cream-Sunk - --cream-sunk) */}
         <HowItWorksSection />
 
-        {/* 5. Features / Capabilities — Warm Cream Alternating Spreads */}
-        <FeaturesSection />
+        {/* Section 4: Evidence Before Approval (Dark - --ink) */}
+        <EvidenceShowcaseSection />
 
-        {/* 6. AI Verification Showcase — Dark */}
-        <AIVerificationSection />
-
-        {/* 7. Developer & Sponsor Sections — Warm Cream */}
-        <AudienceSection
+        {/* Section 5: For Developers / For Sponsors (Cream - --cream) */}
+        <AudiencesSection
           onExploreBounties={onExploreBounties}
           onLaunchBounty={onLaunchBounty}
         />
 
-        {/* 8. Final CTA — Black */}
-        <FinalCTASection
+        {/* Section 6: Final CTA + Footer (Dark - --ink) */}
+        <FinalCtaFooterSection
           onExploreBounties={onExploreBounties}
-          onRegister={onRegister}
+          onLaunchBounty={onLaunchBounty}
         />
       </main>
-
-      {/* Footer */}
-      <LandingFooter
-        onExploreBounties={onExploreBounties}
-        onLaunchBounty={onLaunchBounty}
-      />
     </div>
   );
 }
