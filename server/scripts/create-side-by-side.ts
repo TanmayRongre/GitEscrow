@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer-core";
 
@@ -22,8 +23,11 @@ async function main() {
   await page.setViewport({ width: 1920, height: 1080 });
 
   for (const pair of pairs) {
-    const mainImg = path.join(REG_DIR, `main-${pair.name}.png`).replace(/\\/g, "/");
-    const featImg = path.join(REG_DIR, `feat-${pair.name}.png`).replace(/\\/g, "/");
+    const mainImgPath = path.join(REG_DIR, `main-${pair.name}.png`);
+    const featImgPath = path.join(REG_DIR, `feat-${pair.name}.png`);
+
+    const mainBase64 = fs.readFileSync(mainImgPath).toString("base64");
+    const featBase64 = fs.readFileSync(featImgPath).toString("base64");
 
     const html = `
       <!DOCTYPE html>
@@ -84,14 +88,14 @@ async function main() {
               <span>Main Branch</span>
               <span class="badge badge-main">Before Rebuild</span>
             </div>
-            <img src="file:///${mainImg}">
+            <img src="data:image/png;base64,${mainBase64}">
           </div>
           <div class="col">
             <div class="col-header">
               <span>feat/rebuild-home-page</span>
               <span class="badge badge-feat">Current (With Home Rebuild)</span>
             </div>
-            <img src="file:///${featImg}">
+            <img src="data:image/png;base64,${featBase64}">
           </div>
         </div>
       </body>
