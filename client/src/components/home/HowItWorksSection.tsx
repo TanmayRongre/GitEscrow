@@ -11,19 +11,19 @@ export function HowItWorksSection() {
     },
     {
       num: "02",
-      title: "Contributor claims and builds",
+      title: "Contributor claims & builds",
       desc: "Developer claims the milestone, implements the change, and opens a linked pull request.",
       icon: Code2,
     },
     {
       num: "03",
-      title: "Automated evidence generated",
+      title: "Automated evidence review",
       desc: "System inspects test outcomes, file changes, and acceptance criteria against the pull request.",
       icon: FileCheck2,
     },
     {
       num: "04",
-      title: "Sponsor approves and pays",
+      title: "Sponsor approves & pays",
       desc: "Maintainer reviews the verified evidence and releases payout directly to the contributor.",
       icon: ArrowRightCircle,
     },
@@ -41,15 +41,29 @@ export function HowItWorksSection() {
           </p>
         </div>
 
-        {/* 4 Steps Grid with Step Indicators */}
+        {/* 4 Steps Timeline Grid with Connecting Line */}
         <div
           style={{
+            position: "relative",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
             gap: "var(--space-24)",
             alignItems: "stretch",
           }}
         >
+          {/* Subtle Connecting Line visible across card gaps */}
+          <div
+            style={{
+              position: "absolute",
+              top: "38px",
+              left: "40px",
+              right: "40px",
+              height: "2px",
+              backgroundColor: "var(--border-light)",
+              zIndex: 0,
+            }}
+          />
+
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
@@ -64,6 +78,7 @@ export function HowItWorksSection() {
                   flexDirection: "column",
                   gap: "var(--space-16)",
                   position: "relative",
+                  zIndex: 1,
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -94,6 +109,10 @@ export function HowItWorksSection() {
                       fontWeight: 600,
                       color: "var(--text-light-primary)",
                       margin: 0,
+                      minHeight: "44px",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      lineHeight: 1.35,
                     }}
                   >
                     {step.title}
