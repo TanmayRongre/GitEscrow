@@ -76,7 +76,7 @@ export function AudiencesSection({
             }}
           >
             <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-16)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-20)" }}>
                 <h3
                   style={{
                     fontFamily: "var(--font-body)",
@@ -160,7 +160,7 @@ export function AudiencesSection({
             }}
           >
             <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-16)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-20)" }}>
                 <h3
                   style={{
                     fontFamily: "var(--font-body)",

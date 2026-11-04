@@ -23,16 +23,27 @@ export function FinalCtaFooterSection({
             maxWidth: "680px",
             display: "flex",
             flexDirection: "column",
-            gap: "var(--space-20)",
+            gap: 0,
             paddingBottom: "var(--space-64)",
             borderBottom: "1px solid var(--border-dark)",
             marginBottom: "var(--space-48)",
           }}
         >
-          <h2 className="section-h2-display" style={{ color: "var(--text-dark-primary)" }}>
+          <h2
+            className="section-h2-display"
+            style={{
+              color: "var(--text-dark-primary)",
+              marginBottom: "var(--space-16)",
+            }}
+          >
             Ready to build open source with certainty?
           </h2>
-          <p className="section-subcopy-ink">
+          <p
+            className="section-subcopy-ink"
+            style={{
+              marginBottom: "var(--space-32)",
+            }}
+          >
             Join developers and project maintainers funding and delivering software through milestone bounties.
           </p>
 
@@ -42,7 +53,7 @@ export function FinalCtaFooterSection({
               alignItems: "center",
               flexWrap: "wrap",
               gap: "var(--space-16)",
-              marginTop: "var(--space-8)",
+              marginTop: 0,
             }}
           >
             <button
