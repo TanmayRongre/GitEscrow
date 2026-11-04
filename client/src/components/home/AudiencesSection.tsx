@@ -208,21 +208,29 @@ export function AudiencesSection({
               type="button"
               onClick={onLaunchBounty}
               style={{
-                backgroundColor: "var(--amber)",
-                color: "#0B0C0E",
+                backgroundColor: "transparent",
+                color: "var(--text-light-primary)",
                 fontFamily: "var(--font-body)",
                 fontSize: "15px",
                 fontWeight: 600,
                 padding: "var(--space-12) var(--space-20)",
                 borderRadius: "var(--radius-control)",
-                border: "none",
+                border: "1px solid var(--border-light)",
                 cursor: "pointer",
                 width: "100%",
                 minHeight: "44px",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "background-color 120ms ease",
+                transition: "border-color 120ms ease, color 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--amber)";
+                e.currentTarget.style.color = "var(--amber-dark)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-light)";
+                e.currentTarget.style.color = "var(--text-light-primary)";
               }}
             >
               Fund Your Repository
