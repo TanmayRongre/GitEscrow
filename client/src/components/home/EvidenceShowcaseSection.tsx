@@ -94,6 +94,7 @@ export function EvidenceShowcaseSection() {
               gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               gap: "var(--space-24)",
               padding: "var(--space-24)",
+              alignItems: "start",
             }}
           >
             {/* Panel 1: CI Results (from GitHub) */}
@@ -128,11 +129,27 @@ export function EvidenceShowcaseSection() {
                 </span>
               </div>
 
+              <div
+                style={{
+                  padding: "var(--space-8) var(--space-12)",
+                  backgroundColor: "rgba(34, 197, 94, 0.06)",
+                  border: "1px solid rgba(34, 197, 94, 0.2)",
+                  borderRadius: "var(--radius-control)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "12px",
+                  color: "#E2E8F0",
+                  lineHeight: 1.4,
+                }}
+              >
+                CI pipeline executed on commit 7a82f1b. All 6 jobs completed successfully.
+              </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-10)" }}>
                 {[
                   { check: "Unit tests", result: "14 passed, 0 failed (1.8s)" },
                   { check: "TypeScript check", result: "Clean, 0 errors" },
                   { check: "Linter rules", result: "0 warnings" },
+                  { check: "Code coverage", result: "94.2% statements covered" },
                   { check: "Build bundle", result: "Production artifacts verified" },
                 ].map((row, rIdx) => (
                   <div
@@ -158,6 +175,25 @@ export function EvidenceShowcaseSection() {
                     </span>
                   </div>
                 ))}
+              </div>
+
+              {/* Terminal Log Output Preview */}
+              <div
+                style={{
+                  padding: "var(--space-10) var(--space-12)",
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  borderRadius: "var(--radius-control)",
+                  border: "1px solid var(--border-dark)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "12px",
+                  lineHeight: 1.5,
+                  color: "#D1D5DB",
+                  overflowX: "auto",
+                }}
+              >
+                <div style={{ color: "var(--green)" }}>$ vitest run --reporter=verbose</div>
+                <div style={{ color: "#94A3B8" }}>Test Files  3 passed (3)</div>
+                <div style={{ color: "var(--green)" }}>Tests  14 passed (14) · Duration 1.82s</div>
               </div>
             </div>
 
@@ -241,7 +277,7 @@ export function EvidenceShowcaseSection() {
                       <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-dark-primary)" }}>
                         {item.crit}
                       </span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "#D1D5DB" }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#D1D5DB" }}>
                         Matched in {item.file}
                       </span>
                     </div>
@@ -270,7 +306,7 @@ export function EvidenceShowcaseSection() {
             </div>
           </div>
 
-          {/* Action Bar (Visual Controls Only) */}
+          {/* Action Bar (Sample UI Display Only) */}
           <div
             style={{
               padding: "var(--space-16) var(--space-24)",
@@ -283,23 +319,30 @@ export function EvidenceShowcaseSection() {
               gap: "var(--space-16)",
             }}
           >
-            <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "#CBD5E1" }}>
-              Sponsor review action required to trigger payout disbursement.
-            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "#CBD5E1" }}>
+                Sponsor review action required to trigger payout disbursement.
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Sample UI. No real approval or payment.
+              </span>
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-12)", flexWrap: "wrap" }}>
               <button
                 type="button"
                 tabIndex={-1}
+                aria-hidden="true"
                 style={{
                   backgroundColor: "transparent",
                   color: "var(--text-dark-primary)",
                   fontFamily: "var(--font-body)",
                   fontSize: "14px",
                   fontWeight: 500,
-                  padding: "var(--space-10) var(--space-18)",
+                  padding: "var(--space-12) var(--space-24)",
                   borderRadius: "var(--radius-control)",
                   border: "1px solid var(--border-dark)",
                   cursor: "default",
+                  pointerEvents: "none",
                 }}
               >
                 Request Changes
@@ -307,16 +350,18 @@ export function EvidenceShowcaseSection() {
               <button
                 type="button"
                 tabIndex={-1}
+                aria-hidden="true"
                 style={{
                   backgroundColor: "var(--amber)",
                   color: "#0B0C0E",
                   fontFamily: "var(--font-body)",
                   fontSize: "14px",
                   fontWeight: 600,
-                  padding: "var(--space-10) var(--space-20)",
+                  padding: "var(--space-12) var(--space-24)",
                   borderRadius: "var(--radius-control)",
                   border: "none",
                   cursor: "default",
+                  pointerEvents: "none",
                 }}
               >
                 Approve and Release Payment
