@@ -130,75 +130,87 @@ export function FinalCtaFooterSection({
               </span>
             </div>
 
-            <nav
-              aria-label="Footer Navigation"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "var(--space-20)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={onExploreBounties}
+            <nav aria-label="Footer Navigation">
+              <ul
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#CBD5E1",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "14px",
-                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "var(--space-24)",
+                  listStyle: "none",
+                  margin: 0,
                   padding: 0,
                 }}
               >
-                Explore Bounties
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo("how-it-works")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#CBD5E1",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                How It Works
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo("for-sponsors")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#CBD5E1",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                For Sponsors
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo("for-developers")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#CBD5E1",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                For Developers
-              </button>
+                <li>
+                  <button
+                    type="button"
+                    onClick={onExploreBounties}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#CBD5E1",
+                      fontFamily: "var(--font-body)",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Explore Bounties
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => scrollTo("how-it-works")}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#CBD5E1",
+                      fontFamily: "var(--font-body)",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    How It Works
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => scrollTo("for-sponsors")}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#CBD5E1",
+                      fontFamily: "var(--font-body)",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    For Sponsors
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => scrollTo("for-developers")}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#CBD5E1",
+                      fontFamily: "var(--font-body)",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    For Developers
+                  </button>
+                </li>
+              </ul>
             </nav>
           </div>
 
