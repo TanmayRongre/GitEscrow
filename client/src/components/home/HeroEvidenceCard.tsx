@@ -17,7 +17,7 @@ const TABS: TabDef[] = [
 ];
 
 export function HeroEvidenceCard() {
-  const [activeTab, setActiveTab] = useState<TabKey>("verification");
+  const [activeTab, setActiveTab] = useState<TabKey>("issue");
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -364,7 +364,7 @@ export function HeroEvidenceCard() {
                     <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-dark-primary)" }}>
                       {item.label}
                     </span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "#CBD5E1" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#CBD5E1" }}>
                       {item.source}
                     </span>
                   </div>
