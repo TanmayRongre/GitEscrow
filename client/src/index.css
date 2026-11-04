@@ -8,6 +8,10 @@
 @import "./base.css" layer(base);
 @import "./landing.css";
 
+html {
+  scroll-padding-top: 80px;
+}
+
 /* ==========================================================================
    Root Layout & Global Scaffolding
    ========================================================================== */

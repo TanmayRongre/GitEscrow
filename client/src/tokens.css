@@ -65,6 +65,66 @@
 
 :root {
   color-scheme: dark;
+
+  /* ==========================================================================
+     Strict GitEscrow Home Page Design Tokens
+     ========================================================================== */
+  /* Exactly 2 Dark Surfaces */
+  --ink: #0B0C0E;
+  --ink-raised: #14171B;
+
+  /* Exactly 2 Light Surfaces */
+  --cream: #FBF7EF;
+  --cream-sunk: #F3EEE3;
+
+  /* One Accent */
+  --amber: #D97706;
+  --amber-hover: #B45309;
+
+  /* Status Colors (Used only for status) */
+  --green: #22C55E;
+  --green-light: #166534;
+  --red: #EF4444;
+  --red-light: #B91C1C;
+  --amber-dark: #92400E;
+
+  /* Text & Dividers on Dark Surfaces (--ink, --ink-raised) - WCAG AA 4.5:1+ */
+  --text-dark-primary: #F4F5F6;
+  --text-dark-secondary: #9CA3AF;
+  --text-dark-muted: #94A3B8;
+  --border-dark: #20242A;
+
+  /* Text & Dividers on Light Surfaces (--cream, --cream-sunk) - WCAG AA 4.5:1+ */
+  --text-light-primary: #111214;
+  --text-light-secondary: #4B5563;
+  --text-light-muted: #475569;
+  --border-light: #E2DDD2;
+
+  /* Strict Spacing Scale (4, 8, 12, 16, 24, 32, 48, 64, 96, 128 only) */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-96: 96px;
+  --space-128: 128px;
+
+  /* Section Padding */
+  --section-padding-desktop: 96px;
+  --section-padding-mobile: 64px;
+
+  /* Radii */
+  --radius-card: 12px;
+  --radius-control: 6px;
+
+  /* Strict Typography Stacks */
+  --font-display: "Prata", Georgia, serif;
+  --font-body: "Karla", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
   --color-obsidian: oklch(13% 0.005 250);
   --color-charcoal: oklch(16% 0.006 250);
   --color-cream: oklch(98% 0.012 85);

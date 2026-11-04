@@ -24,24 +24,29 @@
    Navigation Bar
    -------------------------------------------------------------------------- */
 .landing-nav {
-  transition: border-color var(--dur-micro) ease, background-color var(--dur-micro) ease;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--ink);
+  color: var(--text-dark-primary);
+  border-bottom: 1px solid var(--border-dark);
 }
 
 .landing-nav-scrolled {
-  background-color: color-mix(in oklab, var(--color-paper-3) 92%, black);
-  border-bottom-color: var(--color-rule-2);
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--border-dark);
 }
 
 .landing-nav-container {
   width: 100%;
-  max-width: var(--container);
+  max-width: 1200px;
   margin-inline: auto;
-  padding-inline: var(--gutter);
-  padding-block: var(--space-xs);
+  padding-inline: 24px;
+  padding-block: var(--space-8);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-md);
+  gap: var(--space-16);
   min-height: 60px;
 }
 
@@ -84,6 +89,18 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+}
+
+.landing-auth-buttons .btn-primary {
+  background-color: var(--amber) !important;
+  color: #0B0C0E !important;
+  border-color: var(--amber) !important;
+  font-weight: 600 !important;
+}
+
+.landing-auth-buttons .btn-primary:hover {
+  background-color: var(--amber-hover) !important;
+  border-color: var(--amber-hover) !important;
 }
 
 .nav-user-control {
@@ -218,6 +235,130 @@
   align-items: center;
   gap: var(--space-xs);
   padding-bottom: var(--space-2xs);
+}
+
+/* ==========================================================================
+   Strict GitEscrow Home Page Section Layouts
+   ========================================================================== */
+
+/* Section 1 Hero 2-Column Responsive Layout */
+.hero-section {
+  padding-top: var(--section-padding-mobile);
+  padding-bottom: var(--section-padding-mobile);
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--border-dark);
+}
+
+@media (min-width: 1024px) {
+  .hero-section {
+    padding-top: var(--section-padding-desktop);
+    padding-bottom: var(--section-padding-desktop);
+  }
+}
+
+.hero-two-col-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-48);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-two-col-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(480px, 540px);
+    gap: var(--space-48);
+    align-items: center;
+  }
+}
+
+.hero-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+
+.hero-right-col {
+  width: 100%;
+}
+
+.btn-primary-hero:hover {
+  background-color: var(--amber-hover) !important;
+}
+
+.btn-secondary-hero:hover {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Sections 2-6 Shared Structural Rules */
+.home-section-cream {
+  background-color: var(--cream);
+  color: var(--text-light-primary);
+  border-bottom: 1px solid var(--border-light);
+  padding-top: var(--section-padding-mobile);
+  padding-bottom: var(--section-padding-mobile);
+}
+
+.home-section-cream-sunk {
+  background-color: var(--cream-sunk);
+  color: var(--text-light-primary);
+  border-bottom: 1px solid var(--border-light);
+  padding-top: var(--section-padding-mobile);
+  padding-bottom: var(--section-padding-mobile);
+}
+
+.home-section-ink {
+  background-color: var(--ink);
+  color: var(--text-dark-primary);
+  border-bottom: 1px solid var(--border-dark);
+  padding-top: var(--section-padding-mobile);
+  padding-bottom: var(--section-padding-mobile);
+}
+
+@media (min-width: 1024px) {
+  .home-section-cream,
+  .home-section-cream-sunk,
+  .home-section-ink {
+    padding-top: var(--section-padding-desktop);
+    padding-bottom: var(--section-padding-desktop);
+  }
+}
+
+.section-header-block {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  margin-bottom: var(--space-48);
+  text-align: left;
+}
+
+.section-h2-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 3.5vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.section-subcopy-cream {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-light-secondary);
+  margin: 0;
+}
+
+.section-subcopy-ink {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-dark-secondary);
+  margin: 0;
 }
 
 /* --------------------------------------------------------------------------

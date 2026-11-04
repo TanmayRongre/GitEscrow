@@ -4,6 +4,7 @@
   "description": "GitEscrow: AI-driven escrow platform for open-source GitHub bounties powered by PayPal",
   "scripts": {
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n \"server,client\" -c \"blue.bold,cyan.bold\" \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "build:server": "npm run build --prefix server",
@@ -30,6 +31,7 @@
   ],
   "author": "",
   "devDependencies": {
+    "concurrently": "^10.0.6",
     "puppeteer-core": "^25.16.0"
   }
 }
