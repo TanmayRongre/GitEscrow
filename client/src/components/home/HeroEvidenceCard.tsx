@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { CheckCircle2, GitPullRequest } from "lucide-react";
+import { CheckCircle2, GitPullRequest, CircleDot, Lock } from "lucide-react";
 import { gsap, prefersReducedMotion } from "../../motion/gsapSetup";
 
 type TabKey = "issue" | "pr" | "verification" | "payout";
@@ -12,8 +12,8 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: "issue", label: "Issue" },
   { id: "pr", label: "Pull Request" },
-  { id: "verification", label: "Verification" },
-  { id: "payout", label: "Payout" },
+  { id: "verification", label: "Evidence" },
+  { id: "payout", label: "Release" },
 ];
 
 export function HeroEvidenceCard() {
@@ -25,7 +25,7 @@ export function HeroEvidenceCard() {
     if (prefersReducedMotion() || !panelRef.current) return;
     gsap.fromTo(
       panelRef.current,
-      { autoAlpha: 0.65, y: 4 },
+      { autoAlpha: 0.7, y: 3 },
       { autoAlpha: 1, y: 0, duration: 0.16, ease: "power2.out", clearProps: "transform,opacity" },
     );
   }, [activeTab]);
@@ -57,38 +57,41 @@ export function HeroEvidenceCard() {
         border: "1px solid var(--border-dark)",
         borderRadius: "var(--radius-card)",
         overflow: "hidden",
-        boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.6)",
+        boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)",
         width: "100%",
       }}
     >
-      {/* Top Meta Bar */}
+      {/* Top Context & Escrow Meta Bar */}
       <div className="hero-card-header">
         <div className="hero-card-header-left">
           <span
             style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "var(--text-dark-primary)",
+              backgroundColor: "rgba(255, 255, 255, 0.06)",
               padding: "2px 8px",
               borderRadius: "var(--radius-control)",
-              backgroundColor: "rgba(255, 255, 255, 0.08)",
-              color: "#F4F5F6",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              fontWeight: 600,
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
               whiteSpace: "nowrap",
             }}
           >
-            Sample Deliverable
+            <CircleDot size={13} color="var(--amber)" />
+            acme/sample-app#12
           </span>
           <span
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "13px",
-              color: "var(--text-dark-primary)",
-              fontWeight: 500,
+              fontFamily: "var(--font-body)",
+              fontSize: "12px",
+              color: "#94A3B8",
               whiteSpace: "nowrap",
             }}
           >
-            acme/sample-app#12
+            Milestone 1 of 2
           </span>
         </div>
 
@@ -114,24 +117,23 @@ export function HeroEvidenceCard() {
               color: "var(--green)",
               border: "1px solid rgba(34, 197, 94, 0.25)",
               fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
               whiteSpace: "nowrap",
             }}
           >
-            Funded via PayPal
+            <Lock size={10} color="var(--green)" />
+            Funded Escrow
           </span>
         </div>
       </div>
 
-      {/* 4 Equal-Width Interactive Tabs */}
+      {/* 4 Interactive Pipeline Stages */}
       <div
         role="tablist"
-        aria-label="Sample deliverable stages"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          borderBottom: "1px solid var(--border-dark)",
-          backgroundColor: "rgba(0, 0, 0, 0.3)",
-        }}
+        aria-label="Milestone deliverable lifecycle stages"
+        className="hero-pipeline-tabs"
       >
         {TABS.map((tab, idx) => {
           const isActive = activeTab === tab.id;
@@ -147,23 +149,10 @@ export function HeroEvidenceCard() {
               onKeyDown={(e) => handleKeyDown(e, idx)}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                width: "100%",
-                padding: "var(--space-12) var(--space-8)",
-                background: "transparent",
-                border: "none",
-                borderBottom: isActive ? "2px solid var(--amber)" : "2px solid transparent",
-                color: isActive ? "#F4F5F6" : "#CBD5E1",
-                fontFamily: "var(--font-body)",
-                fontSize: "14px",
-                fontWeight: isActive ? 600 : 500,
-                cursor: "pointer",
-                textAlign: "center",
-                transition: "color 120ms ease, border-color 120ms ease",
-                outlineOffset: "-2px",
-              }}
+              className={`hero-pipeline-tab ${isActive ? "active" : ""}`}
             >
-              {tab.label}
+              <span className="hero-tab-num">0{idx + 1}</span>
+              <span className="hero-tab-label">{tab.label}</span>
             </button>
           );
         })}
@@ -171,7 +160,7 @@ export function HeroEvidenceCard() {
 
       {/* Tab Panels */}
       <div ref={panelRef} className="hero-card-body">
-        {/* Tab 1: Issue */}
+        {/* Stage 1: Issue & Acceptance Criteria */}
         {activeTab === "issue" && (
           <div
             id="panel-issue"
@@ -183,7 +172,7 @@ export function HeroEvidenceCard() {
               <h3
                 style={{
                   fontFamily: "var(--font-body)",
-                  fontSize: "16px",
+                  fontSize: "15px",
                   fontWeight: 600,
                   color: "var(--text-dark-primary)",
                   margin: 0,
@@ -192,67 +181,75 @@ export function HeroEvidenceCard() {
               >
                 Add stream timeout handling to client connections
               </h3>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "12px",
-                  color: "#94A3B8",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                Milestone 1 of 2 · Target v2.4
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)", flexWrap: "wrap" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--amber)", fontWeight: 500 }}>
+                  $250.00 USD
+                </span>
+                <span style={{ color: "rgba(255, 255, 255, 0.2)" }}>·</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                  Milestone 1 of 2 (Target v2.4)
+                </span>
+              </div>
             </div>
+
             <p
               style={{
                 fontFamily: "var(--font-body)",
-                fontSize: "14px",
+                fontSize: "13px",
                 lineHeight: 1.5,
                 color: "var(--text-dark-secondary)",
                 margin: 0,
               }}
             >
-              Connection streams currently stay open indefinitely if a remote host stops responding.
-              This deliverable introduces a configurable socket timeout to close idle streams cleanly.
+              Connection streams stay open indefinitely if a remote host stops responding.
+              Introduces a configurable socket timeout to close idle streams cleanly.
             </p>
+
+            {/* Criteria Box */}
             <div
               style={{
-                padding: "var(--space-12) var(--space-14)",
-                backgroundColor: "rgba(255, 255, 255, 0.03)",
+                padding: "var(--space-10) var(--space-12)",
+                backgroundColor: "rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-dark)",
                 borderRadius: "var(--radius-control)",
               }}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "#F4F5F6",
-                  display: "block",
-                  marginBottom: "var(--space-8)",
-                }}
-              >
-                Acceptance Criteria:
-              </span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-6)" }}>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, color: "#F4F5F6" }}>
+                  Acceptance Criteria
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--green)" }}>
+                  2 Scoped Checks
+                </span>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
                 {[
                   "Accept timeoutMs in connection options with 30s default fallback",
                   "Add unit test verifying socket closure on expired streams",
                 ].map((crit, cIdx) => (
                   <div key={cIdx} style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-8)" }}>
-                    <CheckCircle2 size={15} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-dark-secondary)", lineHeight: 1.45 }}>
+                    <CheckCircle2 size={14} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#CBD5E1", lineHeight: 1.4 }}>
                       {crit}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* State Footer */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "var(--space-4)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Status: <span style={{ color: "var(--green)" }}>Funded &amp; Open</span>
+              </span>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                Contributor claims milestone to build
+              </span>
+            </div>
           </div>
         )}
 
-        {/* Tab 2: Pull Request */}
+        {/* Stage 2: Pull Request & Telemetry */}
         {activeTab === "pr" && (
           <div
             id="panel-pr"
@@ -260,46 +257,85 @@ export function HeroEvidenceCard() {
             aria-labelledby="tab-pr"
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
-              <GitPullRequest size={18} color="var(--amber)" />
-              <h3
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "var(--text-dark-primary)",
-                  margin: 0,
-                }}
-              >
-                PR #48: Configure idle socket timeout on stream creation
-              </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
+                <GitPullRequest size={16} color="var(--amber)" />
+                <h3
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "var(--text-dark-primary)",
+                    margin: 0,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  PR #48: Configure idle socket timeout on stream creation
+                </h3>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)", flexWrap: "wrap", fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                <span>Author: @contributor</span>
+                <span style={{ color: "rgba(255, 255, 255, 0.2)" }}>·</span>
+                <span>Branch: fix/stream-timeout</span>
+                <span style={{ color: "rgba(255, 255, 255, 0.2)" }}>·</span>
+                <span>Commit: 7f9a1c4</span>
+              </div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-16)", fontFamily: "var(--font-mono)", fontSize: "12px", color: "#D1D5DB" }}>
-              <span>Author: @contributor</span>
-              <span>Branch: fix/stream-timeout</span>
-              <span>Commit: 7f9a1c4</span>
+
+            {/* 2 Metrics Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-8)" }}>
+              <div style={{ padding: "var(--space-8) var(--space-12)", backgroundColor: "rgba(0, 0, 0, 0.3)", border: "1px solid var(--border-dark)", borderRadius: "var(--radius-control)" }}>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#94A3B8", display: "block" }}>Code Delta</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "14px", color: "var(--text-dark-primary)", fontWeight: 600 }}>3 files (+48 / -6)</span>
+              </div>
+              <div style={{ padding: "var(--space-8) var(--space-12)", backgroundColor: "rgba(0, 0, 0, 0.3)", border: "1px solid var(--border-dark)", borderRadius: "var(--radius-control)" }}>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#94A3B8", display: "block" }}>CI Test Pipeline</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "14px", color: "var(--green)", fontWeight: 600 }}>14 passed (1.82s)</span>
+              </div>
             </div>
+
+            {/* GitHub CI Checks Checklist */}
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "var(--space-12)",
-                marginTop: "var(--space-4)",
+                padding: "var(--space-10) var(--space-12)",
+                backgroundColor: "rgba(0, 0, 0, 0.3)",
+                border: "1px solid var(--border-dark)",
+                borderRadius: "var(--radius-control)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--space-6)",
               }}
             >
-              <div style={{ padding: "var(--space-12)", backgroundColor: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--border-dark)", borderRadius: "var(--radius-control)" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#D1D5DB", display: "block" }}>Files Modified</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "15px", color: "var(--text-dark-primary)", fontWeight: 600 }}>3 files (+48 / -6)</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, color: "#F4F5F6" }}>GitHub Actions Checks</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--green)" }}>All Passed</span>
               </div>
-              <div style={{ padding: "var(--space-12)", backgroundColor: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--border-dark)", borderRadius: "var(--radius-control)" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#D1D5DB", display: "block" }}>Automated Tests</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "15px", color: "var(--green)", fontWeight: 600 }}>14 passing (0 failures)</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", fontFamily: "var(--font-mono)", color: "#CBD5E1" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <CheckCircle2 size={13} color="var(--green)" /> ci/vitest-unit
+                </span>
+                <span style={{ color: "#94A3B8" }}>14 tests passed</span>
               </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", fontFamily: "var(--font-mono)", color: "#CBD5E1" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <CheckCircle2 size={13} color="var(--green)" /> ci/typecheck
+                </span>
+                <span style={{ color: "#94A3B8" }}>0 errors</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "var(--space-4)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Telemetry: <span style={{ color: "var(--green)" }}>Verified</span>
+              </span>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                Automated evidence compiled for review
+              </span>
             </div>
           </div>
         )}
 
-        {/* Tab 3: Verification (Default) */}
+        {/* Stage 3: Automated Evidence Report */}
         {activeTab === "verification" && (
           <div
             id="panel-verification"
@@ -307,12 +343,12 @@ export function HeroEvidenceCard() {
             aria-labelledby="tab-verification"
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-8)" }}>
-              <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "var(--space-8)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                 <h3
                   style={{
                     fontFamily: "var(--font-body)",
-                    fontSize: "16px",
+                    fontSize: "15px",
                     fontWeight: 600,
                     color: "var(--text-dark-primary)",
                     margin: 0,
@@ -320,61 +356,88 @@ export function HeroEvidenceCard() {
                 >
                   Automated Evidence Report
                 </h3>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#D1D5DB" }}>
-                  AI-assisted recommendation: Sponsor decides final approval.
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                  AI-assisted recommendation · Sponsor decides final approval
                 </span>
               </div>
               <span
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: "12px",
-                  padding: "3px 8px",
+                  fontSize: "11px",
+                  padding: "2px 7px",
                   borderRadius: "var(--radius-control)",
                   backgroundColor: "rgba(217, 119, 6, 0.15)",
                   color: "var(--amber)",
                   border: "1px solid rgba(217, 119, 6, 0.3)",
-                  fontWeight: 500,
+                  fontWeight: 600,
                 }}
               >
-                Ready for Review
+                Advisory Match
               </span>
             </div>
 
-            {/* Evidence Checklist */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
+            {/* Criteria Match Rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
               {[
-                { label: "Stream timeout parameter accepted in connection options", source: "Matched in connection.ts:42" },
-                { label: "Default timeout falls back to 30 seconds if omitted", source: "Matched in config.ts:18" },
-                { label: "Socket closure unit test verifies expired streams", source: "Matched in stream.test.ts:89" },
+                { label: "Stream timeout parameter in options", file: "connection.ts:42" },
+                { label: "Unit test confirms expired teardown", file: "stream.test.ts:89" },
               ].map((item, idx) => (
                 <div
                   key={idx}
                   style={{
                     display: "flex",
-                    alignItems: "flex-start",
-                    gap: "var(--space-8)",
-                    padding: "var(--space-8) var(--space-12)",
-                    backgroundColor: "rgba(255, 255, 255, 0.03)",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "var(--space-6) var(--space-10)",
+                    backgroundColor: "rgba(0, 0, 0, 0.3)",
                     borderRadius: "var(--radius-control)",
                     border: "1px solid var(--border-dark)",
                   }}
                 >
-                  <CheckCircle2 size={15} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-dark-primary)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
+                    <CheckCircle2 size={13} color="var(--green)" style={{ flexShrink: 0 }} />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "var(--text-dark-primary)" }}>
                       {item.label}
                     </span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#CBD5E1" }}>
-                      {item.source}
-                    </span>
                   </div>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "#94A3B8" }}>
+                    {item.file}
+                  </span>
                 </div>
               ))}
+            </div>
+
+            {/* Code Diff Preview */}
+            <div
+              style={{
+                padding: "var(--space-8) var(--space-12)",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                borderRadius: "var(--radius-control)",
+                border: "1px solid var(--border-dark)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "12px",
+                lineHeight: 1.5,
+                color: "#D1D5DB",
+                overflowX: "auto",
+              }}
+            >
+              <div style={{ color: "var(--green)" }}>+ if (options.timeoutMs) &#123;</div>
+              <div style={{ color: "var(--green)" }}>+ &nbsp;&nbsp;this.socket.setTimeout(options.timeoutMs, () =&gt; this.handleTimeout());</div>
+              <div style={{ color: "var(--green)" }}>+ &#125;</div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "var(--space-4)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Confidence: <span style={{ color: "var(--green)" }}>Verified Pass</span>
+              </span>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                Ready for maintainer release
+              </span>
             </div>
           </div>
         )}
 
-        {/* Tab 4: Payout */}
+        {/* Stage 4: Disbursement & Payout */}
         {activeTab === "payout" && (
           <div
             id="panel-payout"
@@ -382,32 +445,28 @@ export function HeroEvidenceCard() {
             aria-labelledby="tab-payout"
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
-            <h3
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "var(--text-dark-primary)",
-                margin: 0,
-              }}
-            >
-              Funded Payout Dispatch
-            </h3>
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: "14px",
-                lineHeight: 1.5,
-                color: "var(--text-dark-secondary)",
-                margin: 0,
-              }}
-            >
-              Reward balance of <strong style={{ color: "var(--amber)", fontFamily: "var(--font-mono)" }}>$250.00 USD</strong> is funded upfront via PayPal and tracked through the milestone state machine.
-            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <h3
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "var(--text-dark-primary)",
+                  margin: 0,
+                }}
+              >
+                Disbursement Authorization
+              </h3>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                Maintainer approves verified deliverable to trigger PayPal payout
+              </span>
+            </div>
+
+            {/* Escrow Details */}
             <div
               style={{
-                padding: "var(--space-12)",
-                backgroundColor: "rgba(255, 255, 255, 0.03)",
+                padding: "var(--space-10) var(--space-12)",
+                backgroundColor: "rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-dark)",
                 borderRadius: "var(--radius-control)",
                 fontFamily: "var(--font-mono)",
@@ -415,14 +474,74 @@ export function HeroEvidenceCard() {
                 color: "#E2E8F0",
                 display: "flex",
                 flexDirection: "column",
-                gap: "var(--space-4)",
+                gap: "var(--space-6)",
               }}
             >
-              <div>Destination: <span style={{ color: "var(--text-dark-primary)" }}>@contributor (c***r@example.com)</span></div>
-              <div>Trigger: <span style={{ color: "var(--green)" }}>Instant payout released on sponsor approval</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>Milestone Release:</span>
+                <span style={{ color: "var(--amber)", fontWeight: 600 }}>$250.00 USD</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>Destination:</span>
+                <span style={{ color: "var(--text-dark-primary)" }}>@contributor (c***r@example.com)</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>Escrow State:</span>
+                <span style={{ color: "var(--green)" }}>PayPal Authorized · Awaiting Approval</span>
+              </div>
             </div>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#CBD5E1", margin: 0 }}>
-              GitEscrow is not a bank or a regulated escrow provider. Payments are processed by PayPal.
+
+            {/* Visual Action Buttons */}
+            <div style={{ display: "flex", gap: "var(--space-8)", paddingTop: "var(--space-2)" }}>
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                style={{
+                  flex: 1,
+                  backgroundColor: "transparent",
+                  color: "var(--text-dark-primary)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  padding: "var(--space-8) var(--space-12)",
+                  borderRadius: "var(--radius-control)",
+                  border: "1px solid var(--border-dark)",
+                  cursor: "default",
+                  pointerEvents: "none",
+                }}
+              >
+                Request Changes
+              </button>
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                style={{
+                  flex: 1.4,
+                  backgroundColor: "var(--amber)",
+                  color: "#0B0C0E",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  padding: "var(--space-8) var(--space-12)",
+                  borderRadius: "var(--radius-control)",
+                  border: "none",
+                  cursor: "default",
+                  pointerEvents: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                }}
+              >
+                <Lock size={13} color="#0B0C0E" />
+                Release Payment
+              </button>
+            </div>
+
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#94A3B8", margin: 0 }}>
+              Sample workflow. Payments are processed by PayPal. GitEscrow is not a bank.
             </p>
           </div>
         )}
