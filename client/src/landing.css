@@ -388,8 +388,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-8);
-  padding: var(--space-12) var(--space-16);
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-20);
   border-bottom: 1px solid var(--border-dark);
   background-color: rgba(255, 255, 255, 0.02);
   flex-wrap: nowrap;
@@ -414,9 +414,54 @@
   }
 }
 
+.hero-card-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background-color: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--border-dark);
+}
+
+.hero-card-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-6);
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #94A3B8;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+  outline-offset: -2px;
+  white-space: nowrap;
+}
+
+.hero-card-tab:hover {
+  color: var(--text-dark-primary);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.hero-card-tab.active {
+  color: #F4F5F6;
+  border-bottom-color: var(--amber);
+  background-color: rgba(255, 255, 255, 0.02);
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .hero-card-tab {
+    font-size: 11px;
+    padding: var(--space-10) 2px;
+    letter-spacing: -0.01em;
+  }
+}
+
 .hero-card-body {
-  padding: var(--space-16) var(--space-20);
-  min-height: 215px;
+  padding: var(--space-20) var(--space-20);
+  min-height: 235px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -425,71 +470,8 @@
 
 @media (min-width: 1024px) {
   .hero-card-body {
-    padding: var(--space-16) var(--space-20);
-    min-height: 220px;
-  }
-}
-
-/* Redesigned Pipeline Stage Navigation */
-.hero-pipeline-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 4px;
-  background-color: rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid var(--border-dark);
-}
-
-.hero-pipeline-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 6px;
-  background-color: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: #94A3B8;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
-  outline-offset: -2px;
-}
-
-.hero-pipeline-tab:hover {
-  color: var(--text-dark-primary);
-  background-color: rgba(255, 255, 255, 0.04);
-}
-
-.hero-pipeline-tab.active {
-  color: #F4F5F6;
-  background-color: var(--ink-raised);
-  border-color: rgba(255, 255, 255, 0.12);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.hero-tab-num {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--amber);
-  opacity: 0.85;
-}
-
-.hero-pipeline-tab.active .hero-tab-num {
-  opacity: 1;
-}
-
-@media (max-width: 520px) {
-  .hero-pipeline-tab {
-    font-size: 11px;
-    padding: 6px 2px;
-    gap: 3px;
-  }
-  .hero-tab-num {
-    display: none;
+    padding: var(--space-20) var(--space-24);
+    min-height: 240px;
   }
 }
 
