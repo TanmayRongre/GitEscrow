@@ -4,14 +4,16 @@ import path from "path";
 import cp from "child_process";
 import puppeteer from "puppeteer-core";
 
-const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const CHROME_PATH =
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const WORKSPACE_DIR = process.cwd();
 const REG_DIR = path.resolve(WORKSPACE_DIR, "artifacts/screens/regression");
 const ARTIFACT_MIRROR = process.env.ARTIFACT_MIRROR || REG_DIR;
 const DIST_MAIN = path.resolve(WORKSPACE_DIR, "artifacts/dist-main");
 
 if (!fs.existsSync(REG_DIR)) fs.mkdirSync(REG_DIR, { recursive: true });
-if (!fs.existsSync(ARTIFACT_MIRROR)) fs.mkdirSync(ARTIFACT_MIRROR, { recursive: true });
+if (!fs.existsSync(ARTIFACT_MIRROR))
+  fs.mkdirSync(ARTIFACT_MIRROR, { recursive: true });
 
 // Mock Data
 const mockUser = {
@@ -25,7 +27,13 @@ const mockUser = {
   accountStatus: "ACTIVE",
   reputationScore: 100,
   paypalEmail: "alex.rivera@sandbox.example.com",
-  organizations: [{ organizationId: "6726201a4f00123456789def", name: "React Core Team", role: "OWNER" }],
+  organizations: [
+    {
+      organizationId: "6726201a4f00123456789def",
+      name: "React Core Team",
+      role: "OWNER",
+    },
+  ],
 };
 
 const mockSummary = {
@@ -41,7 +49,8 @@ const mockBounties = [
     _id: "6726201a4f00123456789b01",
     id: "6726201a4f00123456789b01",
     title: "[Fizz] Use the script nonce for bootstrap script preloads",
-    description: "Support Content Security Policy nonce forwarding for script preloads in the Fizz streaming runtime.",
+    description:
+      "Support Content Security Policy nonce forwarding for script preloads in the Fizz streaming runtime.",
     rewardAmount: 250,
     totalAmount: 250,
     totalAmountCents: 25000,
@@ -60,10 +69,26 @@ const mockBounties = [
     issueTitle: "[Fizz] Use the script nonce for bootstrap script preloads",
     issueUrl: "https://github.com/facebook/react/issues/38090",
     issueState: "open",
-    issueLabels: ["Component: Fizz", "Type: Security / CSP", "Good First Milestone"],
-    assignedContributorId: { _id: "6726201a4f00123456789contrib", name: "Elena Rostova", username: "elenarostova" },
-    createdBy: { _id: "6726201a4f00123456789abc", name: "Alex Rivera", username: "alexdev" },
-    organizationId: { _id: "6726201a4f00123456789def", name: "React Core Team", slug: "react-core-team" },
+    issueLabels: [
+      "Component: Fizz",
+      "Type: Security / CSP",
+      "Good First Milestone",
+    ],
+    assignedContributorId: {
+      _id: "6726201a4f00123456789contrib",
+      name: "Elena Rostova",
+      username: "elenarostova",
+    },
+    createdBy: {
+      _id: "6726201a4f00123456789abc",
+      name: "Alex Rivera",
+      username: "alexdev",
+    },
+    organizationId: {
+      _id: "6726201a4f00123456789def",
+      name: "React Core Team",
+      slug: "react-core-team",
+    },
     createdAt: "2026-11-01T08:00:00.000Z",
     updatedAt: "2026-11-03T12:00:00.000Z",
     milestones: [],
@@ -72,7 +97,8 @@ const mockBounties = [
     _id: "6726201a4f00123456789b02",
     id: "6726201a4f00123456789b02",
     title: "Add container query unit support in arbitrary variants",
-    description: "Support unit suffixes (e.g., @sm/w-[30cqw]) in custom arbitrary variants.",
+    description:
+      "Support unit suffixes (e.g., @sm/w-[30cqw]) in custom arbitrary variants.",
     rewardAmount: 180,
     totalAmount: 180,
     totalAmountCents: 18000,
@@ -92,22 +118,39 @@ const mockBounties = [
     issueUrl: "https://github.com/tailwindlabs/tailwindcss/issues/13400",
     issueState: "open",
     issueLabels: ["CSS", "Engine", "Syntax"],
-    createdBy: { _id: "6726201a4f00123456789abc", name: "Alex Rivera", username: "alexdev" },
-    organizationId: { _id: "6726201a4f00123456789def", name: "React Core Team", slug: "react-core-team" },
+    createdBy: {
+      _id: "6726201a4f00123456789abc",
+      name: "Alex Rivera",
+      username: "alexdev",
+    },
+    organizationId: {
+      _id: "6726201a4f00123456789def",
+      name: "React Core Team",
+      slug: "react-core-team",
+    },
     createdAt: "2026-11-01T16:00:00.000Z",
     updatedAt: "2026-11-01T16:00:00.000Z",
     milestones: [],
   },
 ];
 
-function startAppServer(distPath: string, isAuth = true): Promise<{ server: http.Server; url: string }> {
+function startAppServer(
+  distPath: string,
+  isAuth = true,
+): Promise<{ server: http.Server; url: string }> {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       let reqPath = req.url?.split("?")[0] || "/";
 
       res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+      );
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Requested-With",
+      );
 
       if (req.method === "OPTIONS") {
         res.writeHead(204);
@@ -135,7 +178,12 @@ function startAppServer(distPath: string, isAuth = true): Promise<{ server: http
 
       if (reqPath.startsWith("/api/bounties")) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ bounties: mockBounties, total: mockBounties.length }));
+        res.end(
+          JSON.stringify({
+            bounties: mockBounties,
+            total: mockBounties.length,
+          }),
+        );
         return;
       }
 
@@ -147,7 +195,9 @@ function startAppServer(distPath: string, isAuth = true): Promise<{ server: http
 
       if (reqPath.startsWith("/api/users/me/payout-profile")) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ payoutProfile: { payoutStatus: "VERIFIED" } }));
+        res.end(
+          JSON.stringify({ payoutProfile: { payoutStatus: "VERIFIED" } }),
+        );
         return;
       }
 
@@ -207,19 +257,38 @@ async function buildMainDist() {
   try {
     cp.execSync(`git worktree add "${tempDir}" main`, { stdio: "inherit" });
     // create junctions for node_modules
-    cp.execSync(`cmd /c mklink /J "${path.join(tempDir, "client/node_modules")}" "${path.join(WORKSPACE_DIR, "client/node_modules")}"`, { stdio: "inherit" });
-    cp.execSync(`cmd /c mklink /J "${path.join(tempDir, "node_modules")}" "${path.join(WORKSPACE_DIR, "node_modules")}"`, { stdio: "inherit" });
-    
+    cp.execSync(
+      `cmd /c mklink /J "${path.join(tempDir, "client/node_modules")}" "${path.join(WORKSPACE_DIR, "client/node_modules")}"`,
+      { stdio: "inherit" },
+    );
+    cp.execSync(
+      `cmd /c mklink /J "${path.join(tempDir, "node_modules")}" "${path.join(WORKSPACE_DIR, "node_modules")}"`,
+      { stdio: "inherit" },
+    );
+
     // build to DIST_MAIN
-    cp.execSync(`npm run build --prefix "${path.join(tempDir, "client")}"`, { stdio: "inherit" });
-    
+    cp.execSync(`npm run build --prefix "${path.join(tempDir, "client")}"`, {
+      stdio: "inherit",
+    });
+
     // copy dist to DIST_MAIN
     if (!fs.existsSync(DIST_MAIN)) fs.mkdirSync(DIST_MAIN, { recursive: true });
-    cp.execSync(`xcopy /E /I /Y "${path.join(tempDir, "client/dist")}" "${DIST_MAIN}"`, { stdio: "inherit" });
+    cp.execSync(
+      `xcopy /E /I /Y "${path.join(tempDir, "client/dist")}" "${DIST_MAIN}"`,
+      { stdio: "inherit" },
+    );
   } finally {
-    try { cp.execSync(`cmd /c rmdir "${path.join(tempDir, "client/node_modules")}"`); } catch {}
-    try { cp.execSync(`cmd /c rmdir "${path.join(tempDir, "node_modules")}"`); } catch {}
-    try { cp.execSync(`git worktree remove "${tempDir}" --force`); } catch {}
+    try {
+      cp.execSync(
+        `cmd /c rmdir "${path.join(tempDir, "client/node_modules")}"`,
+      );
+    } catch {}
+    try {
+      cp.execSync(`cmd /c rmdir "${path.join(tempDir, "node_modules")}"`);
+    } catch {}
+    try {
+      cp.execSync(`git worktree remove "${tempDir}" --force`);
+    } catch {}
   }
 }
 
@@ -234,7 +303,10 @@ async function captureBranchViews(distPath: string, prefix: string) {
   await page.setViewport({ width: 1440, height: 900 });
 
   // 1. Authenticated session (Explore Bounties & Dashboard)
-  const { server: authServer, url: authUrl } = await startAppServer(distPath, true);
+  const { server: authServer, url: authUrl } = await startAppServer(
+    distPath,
+    true,
+  );
 
   await page.goto(authUrl, { waitUntil: "networkidle0" });
   await new Promise((r) => setTimeout(r, 600));
@@ -242,11 +314,17 @@ async function captureBranchViews(distPath: string, prefix: string) {
   // Navigate to Explore Bounties (Marketplace)
   await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll("button, a"));
-    const b = btns.find((x) => x.textContent?.trim().includes("Explore Bounties") || x.textContent?.trim() === "Marketplace");
+    const b = btns.find(
+      (x) =>
+        x.textContent?.trim().includes("Explore Bounties") ||
+        x.textContent?.trim() === "Marketplace",
+    );
     if (b) (b as HTMLElement).click();
   });
   await new Promise((r) => setTimeout(r, 800));
-  await page.screenshot({ path: path.join(REG_DIR, `${prefix}-explore-bounties.png`) });
+  await page.screenshot({
+    path: path.join(REG_DIR, `${prefix}-explore-bounties.png`),
+  });
   console.log(`Captured ${prefix} Explore Bounties`);
 
   // Navigate to Dashboard
@@ -256,20 +334,29 @@ async function captureBranchViews(distPath: string, prefix: string) {
     if (b) (b as HTMLElement).click();
   });
   await new Promise((r) => setTimeout(r, 800));
-  await page.screenshot({ path: path.join(REG_DIR, `${prefix}-dashboard.png`) });
+  await page.screenshot({
+    path: path.join(REG_DIR, `${prefix}-dashboard.png`),
+  });
   console.log(`Captured ${prefix} Dashboard`);
 
   authServer.close();
 
   // 2. Unauthenticated session (Login page)
-  const { server: anonServer, url: anonUrl } = await startAppServer(distPath, false);
+  const { server: anonServer, url: anonUrl } = await startAppServer(
+    distPath,
+    false,
+  );
 
   await page.goto(anonUrl, { waitUntil: "networkidle0" });
   await new Promise((r) => setTimeout(r, 600));
 
   await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll("button, a"));
-    const b = btns.find((x) => x.textContent?.trim() === "Login" || x.textContent?.trim() === "Sign in");
+    const b = btns.find(
+      (x) =>
+        x.textContent?.trim() === "Login" ||
+        x.textContent?.trim() === "Sign in",
+    );
     if (b) (b as HTMLElement).click();
   });
   await new Promise((r) => setTimeout(r, 800));
@@ -383,9 +470,18 @@ async function generateSideBySide() {
     await page.screenshot({ path: outPath, fullPage: true });
 
     // Copy to artifact mirror
-    fs.copyFileSync(outPath, path.join(ARTIFACT_MIRROR, `side-by-side-${pair.name}.png`));
-    fs.copyFileSync(mainImgPath, path.join(ARTIFACT_MIRROR, `main-${pair.name}.png`));
-    fs.copyFileSync(featImgPath, path.join(ARTIFACT_MIRROR, `feat-${pair.name}.png`));
+    fs.copyFileSync(
+      outPath,
+      path.join(ARTIFACT_MIRROR, `side-by-side-${pair.name}.png`),
+    );
+    fs.copyFileSync(
+      mainImgPath,
+      path.join(ARTIFACT_MIRROR, `main-${pair.name}.png`),
+    );
+    fs.copyFileSync(
+      featImgPath,
+      path.join(ARTIFACT_MIRROR, `feat-${pair.name}.png`),
+    );
 
     console.log(`Generated side-by-side comparison for ${pair.name}`);
   }
@@ -405,4 +501,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

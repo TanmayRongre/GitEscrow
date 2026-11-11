@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer-core";
 
-const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const CHROME_PATH =
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const REG_DIR = path.resolve(process.cwd(), "artifacts/screens/regression");
 const ARTIFACT_MIRROR = process.env.ARTIFACT_MIRROR || REG_DIR;
 

@@ -50,7 +50,20 @@ coverage/
 
 # Temporary & Scratch files
 scratch/
-artifacts/
+tmp/
+unslop/
+
+# IDE, Agent & Skill configuration
 .agent/
 .agents/
-unslop/
+.hallmark/
+skills-lock.json
+AGENTS.md
+
+# Generated screenshots & visual regression captures (preserves official docs screenshots in artifacts/screens/)
+artifacts/devpost/
+artifacts/dist-main/
+artifacts/screens/home-rebuild/
+artifacts/screens/regression/
+artifacts/screens/section-1-hero/
+artifacts/screens/task-*/
