@@ -50,3 +50,7 @@ coverage/
 
 # Temporary & Scratch files
 scratch/
+artifacts/
+.agent/
+.agents/
+unslop/

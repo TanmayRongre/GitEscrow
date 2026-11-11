@@ -2,6 +2,7 @@ import {
   GitHubUser,
   GitHubRepo,
   GitHubIssue,
+  GitHubIssueComment,
   GitHubPullRequest,
   GitHubFileChange,
   GitHubReview,
@@ -135,6 +136,20 @@ export class GitHubClient {
   }
 
   /**
+   * 1b. Fetch current GitHub API rate limit status.
+   */
+  public async getRateLimit(): Promise<{
+    resources: {
+      core: { limit: number; remaining: number; reset: number; used: number };
+      search: { limit: number; remaining: number; reset: number; used: number };
+    };
+    rate: { limit: number; remaining: number; reset: number; used: number };
+  }> {
+    const res = await this.request<any>('/rate_limit');
+    return res.data;
+  }
+
+  /**
    * 2. Fetch repository information.
    */
   public async getRepository(owner: string, repo: string): Promise<GitHubRepo> {
@@ -168,6 +183,27 @@ export class GitHubClient {
    */
   public async getIssue(owner: string, repo: string, issueNumber: number): Promise<GitHubIssue> {
     const res = await this.request<GitHubIssue>(`/repos/${owner}/${repo}/issues/${issueNumber}`);
+    return res.data;
+  }
+
+  /**
+   * 4b. Fetch comments for an issue.
+   */
+  public async getIssueComments(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    page?: number,
+    perPage?: number
+  ): Promise<GitHubIssueComment[]> {
+    const params = new URLSearchParams();
+    if (page) params.set('page', page.toString());
+    if (perPage) params.set('per_page', perPage.toString());
+    const query = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await this.request<GitHubIssueComment[]>(
+      `/repos/${owner}/${repo}/issues/${issueNumber}/comments${query}`
+    );
     return res.data;
   }
 

@@ -229,9 +229,19 @@ function createMockPayPalClient(behavior?: {
         ],
       };
     },
-    verifyWebhookSignature: async () => {
+    verifyWebhookSignature: async (payload: any) => {
+      if (behavior?.verifySignatureStatus) {
+        return { verification_status: behavior.verifySignatureStatus };
+      }
+      if (
+        payload?.transmission_sig === "forged_sig" ||
+        payload?.transmission_sig === "invalid_sig" ||
+        payload?.transmission_sig === "bad_sig"
+      ) {
+        return { verification_status: "FAILURE" };
+      }
       return {
-        verification_status: behavior?.verifySignatureStatus || "SUCCESS",
+        verification_status: "SUCCESS",
       };
     },
   };
@@ -496,6 +506,34 @@ async function runTestSuite() {
       lowCaptureRes.status === 400 &&
         lowCaptureRes.body.code === "INSUFFICIENT_FUNDING_AMOUNT",
       lowCaptureRes.body.error,
+    );
+
+    // Test 5b: Overfunded capture is rejected (exact equality required)
+    const overCaptureId = `cap_over_${SAFE_ID}`;
+    const overCaptureClient = createMockPayPalClient({
+      captureDetails: {
+        id: overCaptureId,
+        status: "COMPLETED",
+        amount: { currency_code: "USD", value: "120.00" },
+      },
+    });
+    setPayPalClient(overCaptureClient);
+
+    const overCaptureRes = await request(
+      serverUrl,
+      "POST",
+      `/api/bounties/${bounty._id}/fund`,
+      { paypalCaptureId: overCaptureId, amount: 120.0 },
+      sponsorToken,
+    );
+    record(
+      "Capture Hardening",
+      "Capture amount exceeding bounty reward is rejected",
+      400,
+      overCaptureRes.status,
+      overCaptureRes.status === 400 &&
+        overCaptureRes.body.code === "OVERFUNDED_CAPTURE",
+      overCaptureRes.body.error,
     );
 
     // Test 6: Valid verified PayPal capture successfully funds bounty
@@ -1347,7 +1385,6 @@ async function runTestSuite() {
       },
       undefined,
       {
-        "x-mock-test-signature": "invalid",
         "paypal-auth-algo": "SHA256withRSA",
         "paypal-cert-url": "https://api.sandbox.paypal.com/v1/certs/CERT-123",
         "paypal-transmission-id": `trans_forged_${SAFE_ID}`,
@@ -1382,7 +1419,6 @@ async function runTestSuite() {
       },
       undefined,
       {
-        "x-mock-test-signature": "valid",
         "paypal-auth-algo": "SHA256withRSA",
         "paypal-cert-url": "https://api.sandbox.paypal.com/v1/certs/CERT-123",
         "paypal-transmission-id": transmissionId,
@@ -1414,7 +1450,6 @@ async function runTestSuite() {
       },
       undefined,
       {
-        "x-mock-test-signature": "valid",
         "paypal-auth-algo": "SHA256withRSA",
         "paypal-cert-url": "https://api.sandbox.paypal.com/v1/certs/CERT-123",
         "paypal-transmission-id": transmissionId,

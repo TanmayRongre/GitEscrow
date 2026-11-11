@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { ZodError } from "zod";
 import mongoose from "mongoose";
 import { AuthenticatedRequest } from "../auth/auth.middleware";
@@ -19,6 +19,7 @@ import {
   milestoneDecisionSchema,
   bountyQuerySchema,
   fundBountySchema,
+  capturePayPalOrderSchema,
 } from "./bounty.validation";
 import {
   PayoutService,
@@ -237,6 +238,83 @@ export class BountyController {
         .json({ message: "Bounty published successfully", bounty: published });
     } catch (err: any) {
       handleControllerError(err, res, "Failed to publish bounty");
+    }
+  }
+
+  public static async getPayPalConfig(
+    _req: Request,
+    res: Response,
+  ): Promise<void> {
+    const clientId = process.env.PAYPAL_CLIENT_ID || "";
+    res.status(200).json({
+      clientId: clientId.trim(),
+      environment: "sandbox",
+      currency: "USD",
+    });
+  }
+
+  public static async createPayPalOrder(
+    req: AuthenticatedRequest,
+    res: Response,
+  ): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Authentication required" });
+        return;
+      }
+      const bounty = await Bounty.findById(req.params.id);
+      if (!bounty) {
+        res
+          .status(404)
+          .json({ error: "Bounty not found", code: "BOUNTY_NOT_FOUND" });
+        return;
+      }
+
+      const orgRole = await resolveOrgRole(bounty.organizationId, req.user._id);
+      const order = await BountyService.createPayPalOrder(
+        req.params.id,
+        req.user,
+        orgRole,
+      );
+      res.status(201).json(order);
+    } catch (err: any) {
+      handleControllerError(err, res, "Failed to create PayPal order");
+    }
+  }
+
+  public static async capturePayPalOrder(
+    req: AuthenticatedRequest,
+    res: Response,
+  ): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Authentication required" });
+        return;
+      }
+      const validated = capturePayPalOrderSchema.parse(req.body);
+      const bounty = await Bounty.findById(req.params.id);
+      if (!bounty) {
+        res
+          .status(404)
+          .json({ error: "Bounty not found", code: "BOUNTY_NOT_FOUND" });
+        return;
+      }
+
+      const orgRole = await resolveOrgRole(bounty.organizationId, req.user._id);
+      const funded = await BountyService.capturePayPalOrder(
+        req.params.id,
+        validated.orderId,
+        req.user,
+        orgRole,
+      );
+      res.status(200).json({
+        message: "Bounty funded successfully via PayPal Sandbox",
+        bounty: funded,
+        captureId: funded.inboundCaptureId,
+        orderId: funded.inboundOrderId,
+      });
+    } catch (err: any) {
+      handleControllerError(err, res, "Failed to capture PayPal order");
     }
   }
 
@@ -468,12 +546,10 @@ export class BountyController {
         req.user,
         orgRole,
       );
-      res
-        .status(200)
-        .json({
-          message: "Milestone updated successfully",
-          milestone: updated,
-        });
+      res.status(200).json({
+        message: "Milestone updated successfully",
+        milestone: updated,
+      });
     } catch (err: any) {
       handleControllerError(err, res, "Failed to update milestone");
     }
@@ -494,12 +570,10 @@ export class BountyController {
         validated.submissionDetails,
         req.user,
       );
-      res
-        .status(200)
-        .json({
-          message: "Milestone submitted for review",
-          milestone: submitted,
-        });
+      res.status(200).json({
+        message: "Milestone submitted for review",
+        milestone: submitted,
+      });
     } catch (err: any) {
       handleControllerError(err, res, "Failed to submit milestone");
     }
@@ -538,12 +612,10 @@ export class BountyController {
         req.user,
         orgRole,
       );
-      res
-        .status(200)
-        .json({
-          message: "Milestone approved successfully",
-          milestone: approved,
-        });
+      res.status(200).json({
+        message: "Milestone approved successfully",
+        milestone: approved,
+      });
     } catch (err: any) {
       handleControllerError(err, res, "Failed to approve milestone");
     }
@@ -582,12 +654,10 @@ export class BountyController {
         req.user,
         orgRole,
       );
-      res
-        .status(200)
-        .json({
-          message: "Changes requested on milestone",
-          milestone: updated,
-        });
+      res.status(200).json({
+        message: "Changes requested on milestone",
+        milestone: updated,
+      });
     } catch (err: any) {
       handleControllerError(err, res, "Failed to request changes on milestone");
     }

@@ -156,6 +156,15 @@ export function CreateBountyForm({ onBountyCreated, onCancel }: CreateBountyForm
   };
 
   const handleApplyAISuggestions = (approvedMilestones: ISuggestedMilestone[], updatedSummary: string) => {
+    if (aiAnalysisResult?.status && aiAnalysisResult.status !== 'READY_FOR_REVIEW') {
+      setError('Cannot apply AI milestones for issues with insufficient information.');
+      return;
+    }
+    if (!approvedMilestones || approvedMilestones.length === 0) {
+      setError('Cannot apply empty milestone list.');
+      return;
+    }
+
     if (updatedSummary) {
       setDescription(updatedSummary);
     }

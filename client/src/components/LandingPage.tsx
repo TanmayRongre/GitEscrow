@@ -10,6 +10,7 @@ import { AudiencesSection } from "./home/AudiencesSection";
 import { FinalCtaFooterSection } from "./home/FinalCtaFooterSection";
 
 interface LandingPageProps {
+  hideNav?: boolean;
   onExploreBounties: () => void;
   onLaunchBounty: () => void;
   onSignIn: () => void;
@@ -33,6 +34,7 @@ interface LandingPageProps {
  * 6. Final CTA + Footer (Dark - --ink)
  */
 export function LandingPage({
+  hideNav = false,
   onExploreBounties,
   onLaunchBounty,
   onSignIn,
@@ -75,7 +77,9 @@ export function LandingPage({
   useEffect(() => {
     if (prefersReducedMotion()) return;
 
-    const sections = document.querySelectorAll<HTMLElement>(".home-section-reveal");
+    const sections = document.querySelectorAll<HTMLElement>(
+      ".home-section-reveal",
+    );
     if (!sections.length) return;
 
     const observer = new IntersectionObserver(
@@ -117,19 +121,25 @@ export function LandingPage({
       }}
     >
       {/* Sticky Navigation: solid background, outside section hierarchy */}
-      <LandingNav
-        onExploreBounties={onExploreBounties}
-        onSignIn={onSignIn}
-        onRegister={onRegister}
-        onViewProfile={onViewProfile}
-        isAuthenticated={isAuthenticated}
-        currentUser={currentUser}
-        loading={loading}
-        onSignOut={onSignOut}
-      />
+      {!hideNav && (
+        <LandingNav
+          onExploreBounties={onExploreBounties}
+          onSignIn={onSignIn}
+          onRegister={onRegister}
+          onViewProfile={onViewProfile}
+          isAuthenticated={isAuthenticated}
+          currentUser={currentUser}
+          loading={loading}
+          onSignOut={onSignOut}
+        />
+      )}
 
       {/* Main Sections */}
-      <main ref={mainRef} className="landing-main-content" style={{ flex: "1 0 auto" }}>
+      <main
+        ref={mainRef}
+        className="landing-main-content"
+        style={{ flex: "1 0 auto" }}
+      >
         {/* Section 1: Hero (Dark - --ink) */}
         <HeroSection
           onExploreBounties={onExploreBounties}

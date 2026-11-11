@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { CheckCircle2, CircleDot, Lock } from "lucide-react";
+import { CheckCircle2, GitPullRequest, CircleDot, Lock } from "lucide-react";
 import { gsap, prefersReducedMotion } from "../../motion/gsapSetup";
 
 type TabKey = "issue" | "pr" | "verification" | "payout";
@@ -59,7 +59,6 @@ export function HeroEvidenceCard() {
         overflow: "hidden",
         boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)",
         width: "100%",
-        boxSizing: "border-box",
       }}
     >
       {/* Top Context & Escrow Meta Bar */}
@@ -67,25 +66,14 @@ export function HeroEvidenceCard() {
         <div className="hero-card-header-left">
           <span
             style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "11px",
-              fontWeight: 500,
-              color: "#94A3B8",
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              padding: "2px 8px",
-              borderRadius: "var(--radius-control)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Sample Deliverable
-          </span>
-          <span
-            style={{
               fontFamily: "var(--font-mono)",
               fontSize: "12px",
-              fontWeight: 500,
+              fontWeight: 600,
               color: "var(--text-dark-primary)",
+              backgroundColor: "rgba(255, 255, 255, 0.06)",
+              padding: "2px 8px",
+              borderRadius: "var(--radius-control)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
@@ -94,6 +82,16 @@ export function HeroEvidenceCard() {
           >
             <CircleDot size={13} color="var(--amber)" />
             acme/sample-app#12
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "12px",
+              color: "#94A3B8",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Milestone 1 of 2
           </span>
         </div>
 
@@ -131,11 +129,11 @@ export function HeroEvidenceCard() {
         </div>
       </div>
 
-      {/* 4 Clean Equal-Width Pipeline Tabs */}
+      {/* 4 Interactive Pipeline Stages */}
       <div
         role="tablist"
         aria-label="Milestone deliverable lifecycle stages"
-        className="hero-card-tabs"
+        className="hero-pipeline-tabs"
       >
         {TABS.map((tab, idx) => {
           const isActive = activeTab === tab.id;
@@ -151,9 +149,10 @@ export function HeroEvidenceCard() {
               onKeyDown={(e) => handleKeyDown(e, idx)}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`hero-card-tab ${isActive ? "active" : ""}`}
+              className={`hero-pipeline-tab ${isActive ? "active" : ""}`}
             >
-              {tab.label}
+              <span className="hero-tab-num">0{idx + 1}</span>
+              <span className="hero-tab-label">{tab.label}</span>
             </button>
           );
         })}
@@ -170,16 +169,6 @@ export function HeroEvidenceCard() {
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "12px",
-                  color: "#94A3B8",
-                  fontWeight: 500,
-                }}
-              >
-                Milestone 1 of 2 · Target v2.4
-              </span>
               <h3
                 style={{
                   fontFamily: "var(--font-body)",
@@ -192,6 +181,15 @@ export function HeroEvidenceCard() {
               >
                 Add stream timeout handling to client connections
               </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)", flexWrap: "wrap" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--amber)", fontWeight: 500 }}>
+                  $250.00 USD
+                </span>
+                <span style={{ color: "rgba(255, 255, 255, 0.2)" }}>·</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                  Milestone 1 of 2 (Target v2.4)
+                </span>
+              </div>
             </div>
 
             <p
@@ -210,21 +208,18 @@ export function HeroEvidenceCard() {
             {/* Criteria Box */}
             <div
               style={{
-                padding: "var(--space-12) var(--space-14)",
-                backgroundColor: "rgba(0, 0, 0, 0.25)",
+                padding: "var(--space-10) var(--space-12)",
+                backgroundColor: "rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-dark)",
                 borderRadius: "var(--radius-control)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--space-8)",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, color: "#E2E8F0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-6)" }}>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, color: "#F4F5F6" }}>
                   Acceptance Criteria
                 </span>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#94A3B8" }}>
-                  2 verified checks
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--green)" }}>
+                  2 Scoped Checks
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
@@ -234,7 +229,7 @@ export function HeroEvidenceCard() {
                 ].map((crit, cIdx) => (
                   <div key={cIdx} style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-8)" }}>
                     <CheckCircle2 size={14} color="var(--green)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "#CBD5E1", lineHeight: 1.4 }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#CBD5E1", lineHeight: 1.4 }}>
                       {crit}
                     </span>
                   </div>
@@ -243,21 +238,12 @@ export function HeroEvidenceCard() {
             </div>
 
             {/* State Footer */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "var(--space-8)",
-                paddingTop: "var(--space-4)",
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
-                Status: <span style={{ color: "var(--green)", fontWeight: 600 }}>Funded &amp; Open</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "var(--space-4)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Status: <span style={{ color: "var(--green)" }}>Funded &amp; Open</span>
               </span>
               <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
-                Claimable by contributor
+                Contributor claims milestone to build
               </span>
             </div>
           </div>
@@ -272,76 +258,47 @@ export function HeroEvidenceCard() {
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "12px",
-                  color: "#94A3B8",
-                  fontWeight: 500,
-                }}
-              >
-                PR #48 · fix/stream-timeout
-              </span>
-              <h3
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  color: "var(--text-dark-primary)",
-                  margin: 0,
-                  lineHeight: 1.35,
-                }}
-              >
-                Configure idle socket timeout on stream creation
-              </h3>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-8)",
-                  flexWrap: "wrap",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "12px",
-                  color: "#94A3B8",
-                }}
-              >
-                <span>Authored by <strong style={{ color: "var(--text-dark-primary)", fontWeight: 500 }}>@contributor</strong></span>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
+                <GitPullRequest size={16} color="var(--amber)" />
+                <h3
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "var(--text-dark-primary)",
+                    margin: 0,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  PR #48: Configure idle socket timeout on stream creation
+                </h3>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-8)", flexWrap: "wrap", fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                <span>Author: @contributor</span>
                 <span style={{ color: "rgba(255, 255, 255, 0.2)" }}>·</span>
-                <span>Commit: <code style={{ fontFamily: "var(--font-mono)", color: "#CBD5E1" }}>7f9a1c4</code></span>
+                <span>Branch: fix/stream-timeout</span>
+                <span style={{ color: "rgba(255, 255, 255, 0.2)" }}>·</span>
+                <span>Commit: 7f9a1c4</span>
               </div>
             </div>
 
             {/* 2 Metrics Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-8)" }}>
-              <div
-                style={{
-                  padding: "var(--space-8) var(--space-12)",
-                  backgroundColor: "rgba(0, 0, 0, 0.25)",
-                  border: "1px solid var(--border-dark)",
-                  borderRadius: "var(--radius-control)",
-                }}
-              >
+              <div style={{ padding: "var(--space-8) var(--space-12)", backgroundColor: "rgba(0, 0, 0, 0.3)", border: "1px solid var(--border-dark)", borderRadius: "var(--radius-control)" }}>
                 <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#94A3B8", display: "block" }}>Code Delta</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--text-dark-primary)", fontWeight: 600 }}>3 files (+48 / -6)</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "14px", color: "var(--text-dark-primary)", fontWeight: 600 }}>3 files (+48 / -6)</span>
               </div>
-              <div
-                style={{
-                  padding: "var(--space-8) var(--space-12)",
-                  backgroundColor: "rgba(0, 0, 0, 0.25)",
-                  border: "1px solid var(--border-dark)",
-                  borderRadius: "var(--radius-control)",
-                }}
-              >
+              <div style={{ padding: "var(--space-8) var(--space-12)", backgroundColor: "rgba(0, 0, 0, 0.3)", border: "1px solid var(--border-dark)", borderRadius: "var(--radius-control)" }}>
                 <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#94A3B8", display: "block" }}>CI Test Pipeline</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--green)", fontWeight: 600 }}>14 passed (1.82s)</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "14px", color: "var(--green)", fontWeight: 600 }}>14 passed (1.82s)</span>
               </div>
             </div>
 
             {/* GitHub CI Checks Checklist */}
             <div
               style={{
-                padding: "var(--space-12) var(--space-14)",
-                backgroundColor: "rgba(0, 0, 0, 0.25)",
+                padding: "var(--space-10) var(--space-12)",
+                backgroundColor: "rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-dark)",
                 borderRadius: "var(--radius-control)",
                 display: "flex",
@@ -350,38 +307,29 @@ export function HeroEvidenceCard() {
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, color: "#E2E8F0" }}>GitHub Actions Checks</span>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "var(--green)", fontWeight: 600 }}>All Passed</span>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, color: "#F4F5F6" }}>GitHub Actions Checks</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--green)" }}>All Passed</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", color: "#CBD5E1" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-mono)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", fontFamily: "var(--font-mono)", color: "#CBD5E1" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <CheckCircle2 size={13} color="var(--green)" /> ci/vitest-unit
                 </span>
-                <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>14 tests passed</span>
+                <span style={{ color: "#94A3B8" }}>14 tests passed</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", color: "#CBD5E1" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-mono)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", fontFamily: "var(--font-mono)", color: "#CBD5E1" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <CheckCircle2 size={13} color="var(--green)" /> ci/typecheck
                 </span>
-                <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>0 errors</span>
+                <span style={{ color: "#94A3B8" }}>0 errors</span>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "var(--space-8)",
-                paddingTop: "var(--space-4)",
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
-                Telemetry: <span style={{ color: "var(--green)", fontWeight: 600 }}>Verified</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "var(--space-4)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Telemetry: <span style={{ color: "var(--green)" }}>Verified</span>
               </span>
               <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
-                Automated evidence compiled
+                Automated evidence compiled for review
               </span>
             </div>
           </div>
@@ -395,17 +343,8 @@ export function HeroEvidenceCard() {
             aria-labelledby="tab-verification"
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "var(--space-8)" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                <span
-                  style={{
-                    fontFamily: "var(--font-body)",
-                    fontSize: "12px",
-                    color: "#94A3B8",
-                  }}
-                >
-                  Automated Evidence Report
-                </span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "var(--space-8)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                 <h3
                   style={{
                     fontFamily: "var(--font-body)",
@@ -415,12 +354,15 @@ export function HeroEvidenceCard() {
                     margin: 0,
                   }}
                 >
-                  Verified Acceptance Criteria Match
+                  Automated Evidence Report
                 </h3>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                  AI-assisted recommendation · Sponsor decides final approval
+                </span>
               </div>
               <span
                 style={{
-                  fontFamily: "var(--font-body)",
+                  fontFamily: "var(--font-mono)",
                   fontSize: "11px",
                   padding: "2px 7px",
                   borderRadius: "var(--radius-control)",
@@ -428,7 +370,6 @@ export function HeroEvidenceCard() {
                   color: "var(--amber)",
                   border: "1px solid rgba(217, 119, 6, 0.3)",
                   fontWeight: 600,
-                  whiteSpace: "nowrap",
                 }}
               >
                 Advisory Match
@@ -448,7 +389,7 @@ export function HeroEvidenceCard() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "var(--space-6) var(--space-10)",
-                    backgroundColor: "rgba(0, 0, 0, 0.25)",
+                    backgroundColor: "rgba(0, 0, 0, 0.3)",
                     borderRadius: "var(--radius-control)",
                     border: "1px solid var(--border-dark)",
                   }}
@@ -470,7 +411,7 @@ export function HeroEvidenceCard() {
             <div
               style={{
                 padding: "var(--space-8) var(--space-12)",
-                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
                 borderRadius: "var(--radius-control)",
                 border: "1px solid var(--border-dark)",
                 fontFamily: "var(--font-mono)",
@@ -485,21 +426,12 @@ export function HeroEvidenceCard() {
               <div style={{ color: "var(--green)" }}>+ &#125;</div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "var(--space-8)",
-                paddingTop: "var(--space-4)",
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
-                Confidence: <span style={{ color: "var(--green)", fontWeight: 600 }}>Verified Pass</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "var(--space-4)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "#94A3B8" }}>
+                Confidence: <span style={{ color: "var(--green)" }}>Verified Pass</span>
               </span>
               <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
-                Ready for sponsor review
+                Ready for maintainer release
               </span>
             </div>
           </div>
@@ -513,16 +445,7 @@ export function HeroEvidenceCard() {
             aria-labelledby="tab-payout"
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-12)" }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "12px",
-                  color: "#94A3B8",
-                }}
-              >
-                Disbursement Authorization · Milestone 1
-              </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               <h3
                 style={{
                   fontFamily: "var(--font-body)",
@@ -532,18 +455,23 @@ export function HeroEvidenceCard() {
                   margin: 0,
                 }}
               >
-                Release PayPal Escrow to Contributor
+                Disbursement Authorization
               </h3>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "#94A3B8" }}>
+                Maintainer approves verified deliverable to trigger PayPal payout
+              </span>
             </div>
 
             {/* Escrow Details */}
             <div
               style={{
                 padding: "var(--space-10) var(--space-12)",
-                backgroundColor: "rgba(0, 0, 0, 0.25)",
+                backgroundColor: "rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-dark)",
                 borderRadius: "var(--radius-control)",
+                fontFamily: "var(--font-mono)",
                 fontSize: "12px",
+                color: "#E2E8F0",
                 display: "flex",
                 flexDirection: "column",
                 gap: "var(--space-6)",
@@ -551,15 +479,15 @@ export function HeroEvidenceCard() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>Milestone Release:</span>
-                <span style={{ color: "var(--amber)", fontFamily: "var(--font-mono)", fontWeight: 600 }}>$250.00 USD</span>
+                <span style={{ color: "var(--amber)", fontWeight: 600 }}>$250.00 USD</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>Destination:</span>
-                <span style={{ color: "var(--text-dark-primary)", fontFamily: "var(--font-body)" }}>@contributor (verified PayPal)</span>
+                <span style={{ color: "var(--text-dark-primary)" }}>@contributor (c***r@example.com)</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#94A3B8", fontFamily: "var(--font-body)" }}>Escrow State:</span>
-                <span style={{ color: "var(--green)", fontFamily: "var(--font-body)", fontWeight: 600 }}>PayPal Authorized · Awaiting Sign-off</span>
+                <span style={{ color: "var(--green)" }}>PayPal Authorized · Awaiting Approval</span>
               </div>
             </div>
 

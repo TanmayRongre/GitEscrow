@@ -100,6 +100,7 @@ export interface OrderResponse {
   links: PayPalLinkDescription[];
   purchase_units?: Array<{
     reference_id?: string;
+    custom_id?: string;
     amount?: PayPalMoney;
     payments?: {
       captures?: Array<{

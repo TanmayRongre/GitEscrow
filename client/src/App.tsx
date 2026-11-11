@@ -10,6 +10,7 @@ import { BountyDetails } from './components/BountyDetails';
 import { CreateBountyForm } from './components/CreateBountyForm';
 import { LandingPage } from './components/LandingPage';
 import { DashboardView } from './components/DashboardView';
+import { Navbar } from './components/Navbar';
 import { animateViewTransition } from './motion/transitions';
 
 type ViewMode = 'landing' | 'dashboard' | 'marketplace' | 'details' | 'create' | 'profile' | 'auth';
@@ -40,164 +41,93 @@ function AppContent() {
     setViewMode('details');
   };
 
-  if (viewMode === 'landing') {
-    return (
-      <LandingPage
-        onExploreBounties={() => {
-          setSelectedBountyId(null);
-          setViewMode('marketplace');
-        }}
-        onLaunchBounty={() => {
-          if (isAuthenticated) {
-            setViewMode('create');
-          } else {
-            setAuthMode('login');
-            setViewMode('auth');
-          }
-        }}
-        onSignIn={() => {
-          setAuthMode('login');
-          setViewMode('auth');
-        }}
-        onRegister={() => {
-          setAuthMode('register');
-          setViewMode('auth');
-        }}
-        onViewProfile={() => {
-          setSelectedBountyId(null);
-          setViewMode('dashboard');
-        }}
+  const handleNavigateHome = () => {
+    setSelectedBountyId(null);
+    if (viewMode !== 'landing') {
+      setViewMode('landing');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExploreBounties = () => {
+    setSelectedBountyId(null);
+    setViewMode('marketplace');
+  };
+
+  const handleNavigateSection = (sectionId: string) => {
+    if (viewMode !== 'landing') {
+      setSelectedBountyId(null);
+      setViewMode('landing');
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 60);
+    } else {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleSignIn = () => {
+    setAuthMode('login');
+    setViewMode('auth');
+  };
+
+  const handleRegister = () => {
+    setAuthMode('register');
+    setViewMode('auth');
+  };
+
+  const handleLaunchBounty = () => {
+    if (isAuthenticated) {
+      setViewMode('create');
+    } else {
+      setAuthMode('login');
+      setViewMode('auth');
+    }
+  };
+
+  const handleViewProfile = () => {
+    setSelectedBountyId(null);
+    setViewMode('dashboard');
+  };
+
+  return (
+    <div className="app-root">
+      <Navbar
+        currentRoute={viewMode}
+        onNavigateHome={handleNavigateHome}
+        onExploreBounties={handleExploreBounties}
+        onNavigateSection={handleNavigateSection}
+        onSignIn={handleSignIn}
+        onRegister={handleRegister}
+        onViewProfile={handleViewProfile}
         isAuthenticated={isAuthenticated}
         currentUser={user}
         loading={loading}
         onSignOut={logout}
       />
-    );
-  }
 
-  return (
-    <div className="app-root">
-      <header className="app-header">
-        <div className="header-container">
-          <div className="header-brand-row">
-            <button
-              type="button"
-              className="logo-area"
-              onClick={() => {
-                setSelectedBountyId(null);
-                setViewMode('landing');
-              }}
-            >
-              <span className="logo-mark">GE</span>
-              <span className="logo-title">GitEscrow</span>
-            </button>
-
-            <div className="user-nav-status">
-              {loading ? (
-                <span className="user-label">Connecting…</span>
-              ) : isAuthenticated && user ? (
-                <div className="user-signed-in">
-                  <span className="user-label">
-                    Signed in as <strong className="user-username">@{user.username}</strong>
-                  </span>
-                  <span className={`status-badge ${user.role === 'ADMIN' ? 'badge-admin' : 'badge-user'}`}>
-                    {user.role === 'ADMIN' ? 'admin' : 'member'}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    onClick={logout}
-                    title="Sign out of GitEscrow"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="auth-nav-buttons">
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${authMode === 'login' && viewMode === 'auth' ? 'btn-primary' : ''}`}
-                    onClick={() => {
-                      setAuthMode('login');
-                      setViewMode('auth');
-                    }}
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${authMode === 'register' && viewMode === 'auth' ? 'btn-primary' : ''}`}
-                    onClick={() => {
-                      setAuthMode('register');
-                      setViewMode('auth');
-                    }}
-                  >
-                    Create account
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <nav className="header-nav" aria-label="Main navigation">
-            <button
-              type="button"
-              className="nav-link"
-              onClick={() => {
-                setSelectedBountyId(null);
-                setViewMode('landing');
-              }}
-            >
-              Home
-            </button>
-
-            {isAuthenticated ? (
-              <button
-                type="button"
-                className={`nav-link ${viewMode === 'dashboard' ? 'nav-active' : ''}`}
-                onClick={() => {
-                  setSelectedBountyId(null);
-                  setViewMode('dashboard');
-                }}
-              >
-                Dashboard
-              </button>
-            ) : null}
-
-            <button
-              type="button"
-              className={`nav-link ${viewMode === 'marketplace' || viewMode === 'details' ? 'nav-active' : ''}`}
-              onClick={() => {
-                setSelectedBountyId(null);
-                setViewMode('marketplace');
-              }}
-            >
-              Marketplace
-            </button>
-
-            {isAuthenticated ? (
-              <>
-                <button
-                  type="button"
-                  className={`nav-link ${viewMode === 'create' ? 'nav-active' : ''}`}
-                  onClick={() => setViewMode('create')}
-                >
-                  Create bounty
-                </button>
-                <button
-                  type="button"
-                  className={`nav-link ${viewMode === 'profile' ? 'nav-active' : ''}`}
-                  onClick={() => setViewMode('profile')}
-                >
-                  Profile
-                </button>
-              </>
-            ) : null}
-          </nav>
-        </div>
-      </header>
-
-      <main ref={mainContentRef} className="main-content">
+      {viewMode === 'landing' ? (
+        <LandingPage
+          hideNav={true}
+          onExploreBounties={handleExploreBounties}
+          onLaunchBounty={handleLaunchBounty}
+          onSignIn={handleSignIn}
+          onRegister={handleRegister}
+          onViewProfile={handleViewProfile}
+          isAuthenticated={isAuthenticated}
+          currentUser={user}
+          loading={loading}
+          onSignOut={logout}
+        />
+      ) : (
+        <>
+          <main ref={mainContentRef} className="main-content">
         {loading ? (
           <div className="loading-state">
             <p>Loading application session…</p>
@@ -289,6 +219,8 @@ function AppContent() {
           </div>
         </div>
       </footer>
+        </>
+      )}
     </div>
   );
 }

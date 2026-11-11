@@ -62,6 +62,15 @@ export interface GitHubIssue {
   };
 }
 
+export interface GitHubIssueComment {
+  id: number;
+  user: GitHubUser | null;
+  body: string;
+  created_at: string;
+  updated_at?: string;
+  html_url?: string;
+}
+
 export interface GitHubPullRequest {
   id: number;
   number: number;

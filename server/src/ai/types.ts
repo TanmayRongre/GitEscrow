@@ -2,7 +2,51 @@ import { z } from "zod";
 
 export type IssueComplexity = "LOW" | "MEDIUM" | "HIGH";
 export type AnalysisConfidence = "HIGH" | "MEDIUM" | "LOW";
-export type AIProvider = "gemini" | "openai" | "heuristic-semantic";
+export type AIProvider =
+  | "groq"
+  | "gemini"
+  | "openai"
+  | "heuristic-semantic"
+  | "deterministic";
+
+export type AnalysisStatus =
+  | "READY_FOR_REVIEW"
+  | "NEEDS_MORE_INFORMATION"
+  | "INSUFFICIENT_EVIDENCE"
+  | "ANALYSIS_FAILED";
+
+export const AnalysisStatusSchema = z.enum([
+  "READY_FOR_REVIEW",
+  "NEEDS_MORE_INFORMATION",
+  "INSUFFICIENT_EVIDENCE",
+  "ANALYSIS_FAILED",
+]);
+
+export type EvidenceSourceType =
+  | "issue_title"
+  | "issue_body"
+  | "issue_comment"
+  | "label"
+  | "code_reference"
+  | "repo_context";
+
+export type EvidenceSufficiency = "DIRECT" | "INFERRED" | "UNVERIFIED";
+
+export const GroundedEvidenceSchema = z.object({
+  item: z.string().trim(),
+  source: z.enum([
+    "issue_title",
+    "issue_body",
+    "issue_comment",
+    "label",
+    "code_reference",
+    "repo_context",
+  ]),
+  evidenceExcerpt: z.string().trim(),
+  evidenceSufficiency: z.enum(["DIRECT", "INFERRED", "UNVERIFIED"]),
+});
+
+export type GroundedEvidence = z.infer<typeof GroundedEvidenceSchema>;
 
 /**
  * Request payload schema for analyzing a GitHub issue
@@ -37,7 +81,7 @@ export type IssueAnalysisRequest = z.infer<typeof IssueAnalysisRequestSchema>;
 export const SuggestedMilestoneSchema = z.object({
   order: z.number().int().min(1),
   title: z.string().trim().min(3).max(200),
-  description: z.string().trim().min(10).max(5000),
+  description: z.string().trim().min(5).max(5000),
   weightPercentage: z.number().min(1).max(100),
   suggestedAmount: z.number().min(0.01),
   currency: z.literal("USD").default("USD"),
@@ -48,6 +92,7 @@ export const SuggestedMilestoneSchema = z.object({
       "Each milestone must have at least one measurable acceptance criterion",
     )
     .max(10, "Milestone cannot have more than 10 acceptance criteria"),
+  criteriaEvidence: z.array(GroundedEvidenceSchema).optional(),
 });
 
 export type SuggestedMilestone = z.infer<typeof SuggestedMilestoneSchema>;
@@ -66,20 +111,32 @@ export const IssueAnalysisResultSchema = z.object({
     labels: z.array(z.string()),
     author: z.string().optional(),
   }),
-  summary: z.string().trim().min(10).max(2000),
+  summary: z.string().trim().min(3).max(2000),
   complexity: z.enum(["LOW", "MEDIUM", "HIGH"]),
-  technicalRequirements: z
-    .array(z.string().trim().min(3).max(500))
-    .min(1, "At least one technical requirement is required"),
-  dependencies: z.array(z.string().trim().min(1).max(200)),
+  technicalRequirements: z.array(z.string().trim().max(500)).default([]),
+  dependencies: z.array(z.string().trim().max(200)).default([]),
   suggestedMilestones: z
     .array(SuggestedMilestoneSchema)
-    .min(2, "At least two milestones are recommended for escrow division")
     .max(5, "Maximum of five milestones recommended"),
   totalRewardAmount: z.number().positive(),
   confidence: z.enum(["HIGH", "MEDIUM", "LOW"]),
   provider: z.string(),
   analyzedAt: z.string(),
+  status: AnalysisStatusSchema.default("READY_FOR_REVIEW"),
+  insufficientReason: z.string().optional(),
+  missingInformation: z.array(z.string()).default([]),
+  sponsorQuestions: z.array(z.string()).default([]),
+  improvementSuggestions: z.array(z.string()).default([]),
+  evidenceCoverage: z.number().min(0).max(100).optional(),
+  groundedRequirements: z.array(GroundedEvidenceSchema).default([]),
+  model: z.string().optional(),
+  tokenUsage: z
+    .object({
+      promptTokens: z.number(),
+      completionTokens: z.number(),
+      totalTokens: z.number(),
+    })
+    .optional(),
 });
 
 export type IssueAnalysisResult = z.infer<typeof IssueAnalysisResultSchema>;

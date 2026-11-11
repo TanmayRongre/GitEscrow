@@ -9,6 +9,7 @@ import { toCents } from "./milestone.service";
 import { LedgerService } from "./ledger.service";
 import { PayoutService } from "../paypal/payout.service";
 import { PayPalClient, getPayPalClient } from "../paypal/client";
+import { CreateOrderPayload, OrderResponse } from "../paypal/types";
 
 export class BountyError extends Error {
   public readonly status: number;
@@ -800,6 +801,258 @@ export class BountyService {
   }
 
   /**
+   * Creates a PayPal Order for the exact bounty funding amount.
+   * Enforces sponsor authorization and bounty ownership.
+   */
+  public static async createPayPalOrder(
+    bountyId: string,
+    actor: IUser,
+    orgRole?: OrganizationRole,
+    options?: { paypalClient?: PayPalClient },
+  ): Promise<{
+    orderId: string;
+    amount: string;
+    currency: string;
+    bountyId: string;
+  }> {
+    const isGlobalAdmin = actor.role === "ADMIN";
+    const isOrgSponsorOrOwner = orgRole === "OWNER" || orgRole === "SPONSOR";
+
+    if (!isGlobalAdmin && !isOrgSponsorOrOwner) {
+      throw new BountyError(
+        "Access Denied: Only organization sponsors or owners can fund bounties.",
+        403,
+        "FORBIDDEN_BOUNTY_FUND",
+      );
+    }
+
+    const bounty = await Bounty.findById(bountyId);
+    if (!bounty) {
+      throw new BountyError("Bounty not found.", 404, "BOUNTY_NOT_FOUND");
+    }
+
+    if (bounty.status === "DRAFT") {
+      throw new BountyError(
+        "Cannot fund a draft bounty. Publish it first.",
+        400,
+        "BOUNTY_IS_DRAFT",
+      );
+    }
+
+    if (bounty.status === "CANCELLED" || bounty.status === "EXPIRED") {
+      throw new BountyError(
+        `Cannot fund bounty in ${bounty.status} state.`,
+        400,
+        "BOUNTY_INACTIVE",
+      );
+    }
+
+    if (
+      bounty.fundingStatus === "FUNDED" ||
+      bounty.fundingStatus === "PARTIALLY_DISBURSED" ||
+      bounty.fundingStatus === "FULLY_DISBURSED"
+    ) {
+      throw new BountyError(
+        "Bounty is already funded.",
+        409,
+        "BOUNTY_ALREADY_FUNDED",
+      );
+    }
+
+    const rewardCents = toCents(bounty.rewardAmount);
+    if (rewardCents <= 0) {
+      throw new BountyError(
+        "Bounty reward amount must be greater than zero.",
+        400,
+        "INVALID_REWARD_AMOUNT",
+      );
+    }
+
+    const amountValue = (rewardCents / 100).toFixed(2);
+    const client = options?.paypalClient || getPayPalClient();
+
+    const payload: CreateOrderPayload = {
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          reference_id: `bounty_${bounty._id}`,
+          description: `GitEscrow Escrow Funding: "${bounty.title}"`,
+          custom_id: bounty._id.toString(),
+          amount: {
+            currency_code: "USD",
+            value: amountValue,
+          },
+        },
+      ],
+      application_context: {
+        brand_name: "GitEscrow",
+        user_action: "PAY_NOW",
+        shipping_preference: "NO_SHIPPING",
+      },
+    };
+
+    const idempotencyKey = `bounty_order_${bounty._id}_${Date.now()}`;
+    const orderResponse = await client.createOrder(payload, idempotencyKey);
+
+    if (!orderResponse || !orderResponse.id) {
+      throw new BountyError(
+        "PayPal did not return a valid order ID.",
+        502,
+        "PAYPAL_ORDER_CREATION_FAILED",
+      );
+    }
+
+    return {
+      orderId: orderResponse.id,
+      amount: amountValue,
+      currency: "USD",
+      bountyId: bounty._id.toString(),
+    };
+  }
+
+  /**
+   * Captures an approved PayPal Order using PayPal REST API, independently verifies
+   * the capture details against the bounty, and transitions fundingStatus to FUNDED.
+   * Frontend-generated capture IDs are never accepted.
+   */
+  public static async capturePayPalOrder(
+    bountyId: string,
+    orderId: string,
+    actor: IUser,
+    orgRole?: OrganizationRole,
+    options?: { paypalClient?: PayPalClient },
+  ): Promise<IBounty> {
+    const isGlobalAdmin = actor.role === "ADMIN";
+    const isOrgSponsorOrOwner = orgRole === "OWNER" || orgRole === "SPONSOR";
+
+    if (!isGlobalAdmin && !isOrgSponsorOrOwner) {
+      throw new BountyError(
+        "Access Denied: Only organization sponsors or owners can fund bounties.",
+        403,
+        "FORBIDDEN_BOUNTY_FUND",
+      );
+    }
+
+    const bounty = await Bounty.findById(bountyId);
+    if (!bounty) {
+      throw new BountyError("Bounty not found.", 404, "BOUNTY_NOT_FOUND");
+    }
+
+    const cleanOrderId = orderId.trim();
+
+    // Idempotency: If already funded with THIS exact order ID, return safely
+    if (
+      bounty.fundingStatus === "FUNDED" ||
+      bounty.fundingStatus === "PARTIALLY_DISBURSED" ||
+      bounty.fundingStatus === "FULLY_DISBURSED"
+    ) {
+      if (bounty.inboundOrderId === cleanOrderId) {
+        return bounty;
+      }
+      throw new BountyError(
+        `Bounty is already funded with another order/capture ID ("${bounty.inboundOrderId || bounty.inboundCaptureId}").`,
+        409,
+        "BOUNTY_ALREADY_FUNDED",
+      );
+    }
+
+    const client = options?.paypalClient || getPayPalClient();
+    let orderResponse: OrderResponse;
+
+    try {
+      const idempotencyKey = `capture_order_${cleanOrderId}`;
+      orderResponse = await client.captureOrder(cleanOrderId, idempotencyKey);
+    } catch (err: any) {
+      // If already captured or completed, retrieve the order to check the capture
+      if (
+        err.status === 422 ||
+        err.message?.includes("ORDER_ALREADY_CAPTURED") ||
+        err.message?.includes("COMPLETED")
+      ) {
+        orderResponse = await client.getOrder(cleanOrderId);
+      } else {
+        throw new BountyError(
+          `PayPal order capture failed: ${err.message}`,
+          err.status || 400,
+          "ORDER_CAPTURE_FAILED",
+        );
+      }
+    }
+
+    const purchaseUnit = orderResponse?.purchase_units?.[0];
+    const capture = purchaseUnit?.payments?.captures?.[0];
+
+    if (!capture || !capture.id) {
+      throw new BountyError(
+        "No completed capture found in PayPal order response.",
+        400,
+        "CAPTURE_NOT_FOUND",
+      );
+    }
+
+    if (capture.status !== "COMPLETED") {
+      throw new BountyError(
+        `Cannot fund bounty: PayPal capture status must be "COMPLETED", but received "${capture.status}".`,
+        400,
+        "CAPTURE_NOT_COMPLETED",
+      );
+    }
+
+    const captureCurrency = capture.amount?.currency_code;
+    if (captureCurrency !== "USD") {
+      throw new BountyError(
+        `Cannot fund bounty: Capture currency must be "USD", but received "${captureCurrency || "UNKNOWN"}".`,
+        400,
+        "INVALID_CAPTURE_CURRENCY",
+      );
+    }
+
+    const capturedAmountCents = toCents(capture.amount?.value);
+    const rewardCents = toCents(bounty.rewardAmount);
+
+    if (capturedAmountCents < rewardCents) {
+      throw new BountyError(
+        `Captured amount ($${(capturedAmountCents / 100).toFixed(2)}) is less than the bounty reward ($${(
+          rewardCents / 100
+        ).toFixed(2)}).`,
+        400,
+        "INSUFFICIENT_FUNDING_AMOUNT",
+      );
+    }
+
+    if (capturedAmountCents > rewardCents) {
+      throw new BountyError(
+        `Captured amount ($${(capturedAmountCents / 100).toFixed(2)}) exceeds expected bounty reward ($${(
+          rewardCents / 100
+        ).toFixed(2)}). Overfunding is not supported.`,
+        400,
+        "OVERFUNDED_CAPTURE",
+      );
+    }
+
+    if (purchaseUnit?.custom_id && purchaseUnit.custom_id !== bounty._id.toString()) {
+      throw new BountyError(
+        "PayPal order custom_id does not match this bounty ID.",
+        400,
+        "ORDER_BOUNTY_MISMATCH",
+      );
+    }
+
+    // Delegate to authoritative fundBounty with the verified capture
+    return await this.fundBounty(
+      bounty._id.toString(),
+      {
+        paypalCaptureId: capture.id,
+        paypalOrderId: cleanOrderId,
+        amount: parseFloat(capture.amount.value),
+      },
+      actor,
+      orgRole,
+      options,
+    );
+  }
+
+  /**
    * Funds a bounty after sponsor capture via PayPal.
    * Authoritatively verifies capture with PayPal API (status COMPLETED, amount >= reward, currency USD),
    * enforces single-use uniqueness across all bounties, provides safe idempotency,
@@ -904,6 +1157,16 @@ export class BountyService {
         ).toFixed(2)}).`,
         400,
         "INSUFFICIENT_FUNDING_AMOUNT",
+      );
+    }
+
+    if (capturedAmountCents > rewardCents) {
+      throw new BountyError(
+        `Captured amount ($${(capturedAmountCents / 100).toFixed(2)}) exceeds expected bounty reward ($${(
+          rewardCents / 100
+        ).toFixed(2)}). Overfunding is not supported.`,
+        400,
+        "OVERFUNDED_CAPTURE",
       );
     }
 

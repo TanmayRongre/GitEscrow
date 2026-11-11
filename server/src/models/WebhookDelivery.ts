@@ -8,6 +8,13 @@ export interface IWebhookDelivery extends Document {
   sender?: string;
   receivedAt: Date;
   processed: boolean;
+  status: 'PROCESSING' | 'PROCESSED' | 'FAILED';
+  processingStartedAt?: Date;
+  completedAt?: Date;
+  error?: string;
+  attempts?: number;
+  sideEffectInitiated?: boolean;
+  sideEffectCompleted?: boolean;
   payloadSummary?: Record<string, unknown>;
 }
 
@@ -41,7 +48,39 @@ const WebhookDeliverySchema = new Schema<IWebhookDelivery>({
   },
   processed: {
     type: Boolean,
-    default: true
+    default: false
+  },
+  status: {
+    type: String,
+    enum: ['PROCESSING', 'PROCESSED', 'FAILED'],
+    default: function (this: any) {
+      return this.processed ? 'PROCESSED' : 'PROCESSING';
+    },
+    index: true
+  },
+  processingStartedAt: {
+    type: Date,
+    default: Date.now
+  },
+  completedAt: {
+    type: Date,
+    required: false
+  },
+  error: {
+    type: String,
+    required: false
+  },
+  attempts: {
+    type: Number,
+    default: 1
+  },
+  sideEffectInitiated: {
+    type: Boolean,
+    default: false
+  },
+  sideEffectCompleted: {
+    type: Boolean,
+    default: false
   },
   payloadSummary: {
     type: Schema.Types.Mixed,

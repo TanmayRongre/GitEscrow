@@ -1,5 +1,5 @@
 import { GitHubClient, GitHubApiError } from "../github/client";
-import { GitHubIssue, GitHubRepo } from "../github/types";
+import { GitHubIssue, GitHubIssueComment, GitHubRepo } from "../github/types";
 import { AIAnalysisClient } from "./client";
 import { IssueAnalysisResult, IssueAnalysisRequest } from "./types";
 import { distributeCents } from "./semantic-analyzer";
@@ -126,6 +126,24 @@ export class AIService {
       repo = null;
     }
 
+    // 2b. Fetch issue comments if present for context
+    let comments: GitHubIssueComment[] = [];
+    if (issue.comments && issue.comments > 0) {
+      try {
+        comments = await this.githubClient.getIssueComments(
+          repositoryOwner,
+          repositoryName,
+          issueNumber,
+          1,
+          20,
+        );
+      } catch (commentErr: any) {
+        console.warn(
+          `[AIService] Could not fetch comments for #${issueNumber}: ${commentErr.message}. Continuing with issue body.`,
+        );
+      }
+    }
+
     // 3. Check cache
     const cached = this.analysisCache.get(issueKey);
     const now = Date.now();
@@ -142,6 +160,7 @@ export class AIService {
       totalRewardAmount,
       repositoryOwner,
       repositoryName,
+      comments,
     );
 
     // 5. Store in cache
@@ -157,6 +176,16 @@ export class AIService {
     analysis: IssueAnalysisResult,
     targetTotal: number,
   ): IssueAnalysisResult {
+    if (
+      !analysis.suggestedMilestones ||
+      analysis.suggestedMilestones.length === 0
+    ) {
+      return {
+        ...analysis,
+        totalRewardAmount: targetTotal,
+      };
+    }
+
     const totalCents = Math.round(targetTotal * 100);
     const weights = analysis.suggestedMilestones.map((m) => m.weightPercentage);
     const centShares = distributeCents(totalCents, weights);

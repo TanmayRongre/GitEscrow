@@ -23,6 +23,7 @@ const writeLimiter = rateLimit({
 
 // --- Public / Read Bounty Routes ---
 bountyRouter.get("/summary", optionalAuthenticate, BountyController.getSummary);
+bountyRouter.get("/paypal/config", BountyController.getPayPalConfig);
 bountyRouter.get("/", optionalAuthenticate, BountyController.list);
 bountyRouter.get("/:id", BountyController.getById);
 bountyRouter.get("/:id/milestones", BountyController.listMilestones);
@@ -41,6 +42,18 @@ bountyRouter.post(
   authenticate,
   writeLimiter,
   BountyController.fundBounty,
+);
+bountyRouter.post(
+  "/:id/create-paypal-order",
+  authenticate,
+  writeLimiter,
+  BountyController.createPayPalOrder,
+);
+bountyRouter.post(
+  "/:id/capture-paypal-order",
+  authenticate,
+  writeLimiter,
+  BountyController.capturePayPalOrder,
 );
 bountyRouter.post("/:id/cancel", authenticate, BountyController.cancel);
 bountyRouter.post("/:id/accept", authenticate, BountyController.accept);

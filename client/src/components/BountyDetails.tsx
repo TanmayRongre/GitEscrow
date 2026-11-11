@@ -27,6 +27,7 @@ import {
 import { ModalDialog } from "./ModalDialog";
 import { MilestoneSubmitPRModal } from "./MilestoneSubmitPRModal";
 import { PRVerificationModal } from "./PRVerificationModal";
+import { PayPalFundingModal } from "./PayPalFundingModal";
 import type { IAcceptanceVerificationResult } from "../types/pr-verification";
 
 interface BountyDetailsProps {
@@ -82,6 +83,7 @@ export function BountyDetails({
 
   // Task 2D: Contributor Payout Profile & Retry States
   const [showPayoutEmailModal, setShowPayoutEmailModal] = useState<boolean>(false);
+  const [showFundingModal, setShowFundingModal] = useState<boolean>(false);
   const [payoutEmailInput, setPayoutEmailInput] = useState<string>("");
   const [payoutLoading, setPayoutLoading] = useState<boolean>(false);
 
@@ -213,26 +215,9 @@ export function BountyDetails({
     }
   };
 
-  const handleFundBounty = async () => {
-    if (!bounty) return;
-    try {
-      setActionLoading(true);
-      setError(null);
-      await apiRequest(`/bounties/${bountyId}/fund`, {
-        method: "POST",
-        body: JSON.stringify({
-          paypalCaptureId: `cap_sandbox_${Date.now()}`,
-          amount: bounty.rewardAmount,
-        }),
-      });
-      setSuccessMsg(`Bounty funded with $${bounty.rewardAmount.toFixed(2)} USD! Milestone payouts activated.`);
-      await fetchDetails();
-      onRefreshList?.();
-    } catch (err: any) {
-      setError(err.message || "Failed to fund bounty.");
-    } finally {
-      setActionLoading(false);
-    }
+  const handleOpenFundingModal = () => {
+    setError(null);
+    setShowFundingModal(true);
   };
 
   const handleSavePayoutEmail = async (e: React.FormEvent) => {
@@ -552,7 +537,7 @@ export function BountyDetails({
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              onClick={handleFundBounty}
+              onClick={handleOpenFundingModal}
               disabled={actionLoading}
             >
               Fund bounty ({formatReward(bounty.rewardAmount, bounty.currency)})
@@ -1584,6 +1569,22 @@ export function BountyDetails({
           </div>
         </form>
       </ModalDialog>
+
+      {/* Real PayPal Sandbox Checkout Modal */}
+      {showFundingModal && bounty && (
+        <PayPalFundingModal
+          bounty={bounty}
+          isOpen={showFundingModal}
+          onClose={() => setShowFundingModal(false)}
+          onSuccess={(updatedBounty) => {
+            setBounty(updatedBounty);
+            setSuccessMsg(
+              `Bounty funded with $${updatedBounty.rewardAmount.toFixed(2)} USD via PayPal Sandbox! Milestone payouts activated.`,
+            );
+            onRefreshList?.();
+          }}
+        />
+      )}
     </div>
   );
 }

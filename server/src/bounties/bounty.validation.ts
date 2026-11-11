@@ -178,3 +178,7 @@ export const fundBountySchema = z.object({
   paypalOrderId: z.string().trim().optional(),
   amount: z.number().positive("Funded amount must be a positive number")
 });
+
+export const capturePayPalOrderSchema = z.object({
+  orderId: z.string().trim().min(3, "PayPal Order ID is required")
+});

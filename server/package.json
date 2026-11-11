@@ -16,6 +16,7 @@
     "test:bounties": "tsx scripts/test-bounties.ts",
     "test:pr-verification": "tsx scripts/test-pr-verification.ts",
     "test:payouts": "tsx scripts/test-milestone-payout.ts",
+    "test:checkout": "tsx scripts/test-paypal-checkout.ts",
     "audit:2c1": "tsx scripts/audit-task-2c1.ts",
     "verify:payouts-us": "tsx scripts/verify-payouts-us.ts"
   },
