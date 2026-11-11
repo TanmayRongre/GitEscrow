@@ -4,7 +4,7 @@ import puppeteer from "puppeteer-core";
 
 const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const REG_DIR = path.resolve(process.cwd(), "artifacts/screens/regression");
-const ARTIFACT_MIRROR = "C:\\Users\\Tanmay\\.gemini\\antigravity\\brain\\ed701d20-9821-48d7-9c60-0616946341bc\\screens\\regression";
+const ARTIFACT_MIRROR = process.env.ARTIFACT_MIRROR || REG_DIR;
 
 const pairs = [
   { name: "explore-bounties", title: "Explore Bounties (/marketplace)" },

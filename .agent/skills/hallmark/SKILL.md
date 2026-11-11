@@ -9,9 +9,9 @@ metadata:
 
 # Hallmark
 
-Makes the UIs a coding assistant generates look made, not generated: a hard floor against the defaults every model was trained into, a dealt direction so consecutive builds do not converge, one idea per screen. Above the floor the page is yours: you are a capable designer.
+Design system and standards for interfaces that look designed, not generic: a disciplined floor against defaults, a distinct direction so consecutive screens do not converge, one idea per screen. Above the floor the page is yours: you are a capable designer.
 
-**Powered by Together AI.**
+
 
 ## The Floor
 
