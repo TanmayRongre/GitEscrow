@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "verify:sandbox": "tsx scripts/verify-sandbox.ts",
     "verify:paypal": "tsx scripts/verify-sandbox.ts",
